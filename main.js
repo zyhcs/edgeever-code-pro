@@ -227,6 +227,7 @@ export default {
     const settings = {
       showMacDots: true,
       showLanguageBadge: true,
+      showCollapseButton: true,
       showCopyButton: true,
       showLineNumbers: true,
       autoDetectAbap: true,
@@ -237,6 +238,7 @@ export default {
       try {
         const dots = await context.settings.get("show_mac_dots");
         const lang = await context.settings.get("show_language_badge");
+        const collapse = await context.settings.get("show_collapse_button");
         const copy = await context.settings.get("show_copy_button");
         const lines = await context.settings.get("show_line_numbers");
         const abap = await context.settings.get("auto_detect_abap");
@@ -244,6 +246,7 @@ export default {
 
         if (dots !== null) settings.showMacDots = dots;
         if (lang !== null) settings.showLanguageBadge = lang;
+        if (collapse !== null) settings.showCollapseButton = collapse;
         if (copy !== null) settings.showCopyButton = copy;
         if (lines !== null) settings.showLineNumbers = lines;
         if (abap !== null) settings.autoDetectAbap = abap;
@@ -349,6 +352,8 @@ export default {
           label: detectedLang.toUpperCase(),
         };
 
+      const linesCount = rawText.split("\n").length;
+
       // 2. 标记与样式类应用
       block.classList.add("edgeever-code-pro-block");
       block.classList.remove(
@@ -373,14 +378,21 @@ export default {
       const left = document.createElement("div");
       left.className = "edgeever-code-pro-left";
 
-      // Mac 三色圆点
+      // Mac 三色圆点（黄色圆点支持点击折叠/展开）
       if (settings.showMacDots) {
         const dots = document.createElement("div");
         dots.className = "edgeever-code-mac-dots";
         dots.innerHTML =
-          '<span class="edgeever-code-dot red"></span><span class="edgeever-code-dot yellow"></span><span class="edgeever-code-dot green"></span>';
+          '<span class="edgeever-code-dot red"></span><span class="edgeever-code-dot yellow" title="点击折叠/展开代码"></span><span class="edgeever-code-dot green"></span>';
+        dots.querySelector(".yellow").onclick = (e) => {
+          e.stopPropagation();
+          toggleCollapse();
+        };
         left.appendChild(dots);
       }
+
+      // 折叠提示标签引用
+      let collapseHintEl = null;
 
       // 可编辑/切换的语言徽标
       if (settings.showLanguageBadge) {
@@ -426,14 +438,81 @@ export default {
         langSelector.appendChild(badgeBtn);
         langSelector.appendChild(menu);
         left.appendChild(langSelector);
+
+        // 折叠行数提示
+        collapseHintEl = document.createElement("span");
+        collapseHintEl.className = "edgeever-code-collapsed-hint";
+        collapseHintEl.textContent = `(已折叠 ${linesCount} 行)`;
+        collapseHintEl.style.display = block.classList.contains("is-collapsed") ? "inline" : "none";
+        collapseHintEl.onclick = (e) => {
+          e.stopPropagation();
+          toggleCollapse();
+        };
+        left.appendChild(collapseHintEl);
       }
 
       toolbar.appendChild(left);
 
+      // 右侧操作区域
+      const right = document.createElement("div");
+      right.className = "edgeever-code-pro-right";
+
+      // 折叠/展开控制逻辑
+      let collapseBtn = null;
+      function toggleCollapse() {
+        const isCollapsed = block.classList.toggle("is-collapsed");
+        if (collapseBtn) {
+          collapseBtn.innerHTML = isCollapsed
+            ? `
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+            <span>展开</span>
+          `
+            : `
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="18 15 12 9 6 15"></polyline>
+            </svg>
+            <span>折叠</span>
+          `;
+        }
+        if (collapseHintEl) {
+          collapseHintEl.style.display = isCollapsed ? "inline" : "none";
+        }
+      }
+
+      // 折叠/展开按钮
+      if (settings.showCollapseButton) {
+        collapseBtn = document.createElement("button");
+        collapseBtn.className = "edgeever-code-tool-btn edgeever-code-collapse-btn";
+        collapseBtn.type = "button";
+        collapseBtn.setAttribute("contenteditable", "false");
+        const isCollapsed = block.classList.contains("is-collapsed");
+        collapseBtn.innerHTML = isCollapsed
+          ? `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+          <span>展开</span>
+        `
+          : `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+          <span>折叠</span>
+        `;
+        collapseBtn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleCollapse();
+        };
+        right.appendChild(collapseBtn);
+      }
+
       // 右侧复制按钮（全面对接桌面端与网页端剪贴板）
       if (settings.showCopyButton) {
         const copyBtn = document.createElement("button");
-        copyBtn.className = "edgeever-code-copy-btn";
+        copyBtn.className = "edgeever-code-tool-btn edgeever-code-copy-btn";
         copyBtn.type = "button";
         copyBtn.setAttribute("contenteditable", "false");
         copyBtn.innerHTML = `
@@ -458,11 +537,12 @@ export default {
             }, 2000);
           }
         };
-        toolbar.appendChild(copyBtn);
+        right.appendChild(copyBtn);
       }
 
+      toolbar.appendChild(right);
+
       // 4. 行号槽管理
-      const linesCount = rawText.split("\n").length;
       let existingGutter = block.querySelector(".edgeever-code-line-numbers");
       if (existingGutter) existingGutter.remove();
 
@@ -552,6 +632,7 @@ export default {
         p.classList.remove(
           "edgeever-code-pro-block",
           "has-line-numbers",
+          "is-collapsed",
           "edgeever-theme-one-dark",
           "edgeever-theme-github-dark",
           "edgeever-theme-tokyo-night",

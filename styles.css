@@ -23,6 +23,7 @@ pre.edgeever-code-pro-block {
   font-family: ui-monospace, "JetBrains Mono", "Fira Code", SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
   font-size: 13.5px !important;
   line-height: 1.62 !important;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 /* 3. 顶部 Mac 风格工具栏 */
@@ -40,12 +41,19 @@ pre.edgeever-code-pro-block {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   z-index: 10;
   position: relative;
+  transition: border-radius 0.2s ease;
 }
 
 .edgeever-code-pro-left {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.edgeever-code-pro-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* Mac 三色小圆点 */
@@ -60,10 +68,19 @@ pre.edgeever-code-pro-block {
   height: 11px;
   border-radius: 50%;
   display: inline-block;
+  transition: transform 0.15s ease, filter 0.15s ease;
 }
 
 .edgeever-code-dot.red { background: #ff5f56; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); }
-.edgeever-code-dot.yellow { background: #ffbd2e; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); }
+.edgeever-code-dot.yellow {
+  background: #ffbd2e;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+}
+.edgeever-code-dot.yellow:hover {
+  filter: brightness(1.25);
+  transform: scale(1.15);
+}
 .edgeever-code-dot.green { background: #27c93f; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); }
 
 /* 语言选择器容器 */
@@ -106,6 +123,16 @@ pre.edgeever-code-pro-block {
 
 .edgeever-code-lang-selector.open .edgeever-code-lang-chevron {
   transform: rotate(180deg);
+}
+
+/* 折叠统计提示 */
+.edgeever-code-collapsed-hint {
+  font-size: 11px;
+  color: var(--lang-color, #94a3b8);
+  opacity: 0.85;
+  margin-left: 2px;
+  font-weight: 500;
+  cursor: pointer;
 }
 
 /* 语言下拉菜单 */
@@ -158,8 +185,8 @@ pre.edgeever-code-pro-block {
   font-weight: 600;
 }
 
-/* 一键复制按钮 */
-.edgeever-code-copy-btn {
+/* 通用操作按钮（折叠、复制） */
+.edgeever-code-tool-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -172,9 +199,10 @@ pre.edgeever-code-pro-block {
   padding: 3px 9px;
   cursor: pointer;
   transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
 }
 
-.edgeever-code-copy-btn:hover {
+.edgeever-code-tool-btn:hover {
   color: #ffffff;
   background: rgba(255, 255, 255, 0.14);
   border-color: rgba(255, 255, 255, 0.25);
@@ -239,6 +267,25 @@ pre.edgeever-code-pro-block.has-line-numbers code {
   height: 1.62em !important;
   line-height: 1.62em !important;
   opacity: 0.65 !important;
+}
+
+/* 6. 折叠模式核心样式 */
+.edgeever-code-block.edgeever-code-pro-block.is-collapsed .edgeever-code-source,
+.edgeever-code-block.edgeever-code-pro-block.is-collapsed .edgeever-code-line-numbers,
+pre.edgeever-code-pro-block.is-collapsed code,
+pre.edgeever-code-pro-block.is-collapsed .edgeever-code-line-numbers {
+  display: none !important;
+}
+
+.edgeever-code-block.edgeever-code-pro-block.is-collapsed .edgeever-code-pro-toolbar,
+pre.edgeever-code-pro-block.is-collapsed .edgeever-code-pro-toolbar {
+  border-bottom: none !important;
+  border-radius: 9px !important;
+}
+
+.edgeever-code-block.edgeever-code-pro-block.is-collapsed,
+pre.edgeever-code-pro-block.is-collapsed {
+  box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.15) !important;
 }
 
 /* ==========================================================================
@@ -446,11 +493,11 @@ pre.edgeever-code-pro-block.has-line-numbers code {
   --menu-active-text: #0969da;
 }
 
-.edgeever-theme-github-light .edgeever-code-copy-btn {
+.edgeever-theme-github-light .edgeever-code-tool-btn {
   color: #57606a;
   border-color: rgba(0, 0, 0, 0.15);
 }
-.edgeever-theme-github-light .edgeever-code-copy-btn:hover {
+.edgeever-theme-github-light .edgeever-code-tool-btn:hover {
   color: #24292f;
   background: rgba(0, 0, 0, 0.08);
 }
