@@ -2,14 +2,14 @@
   "type": "plugin",
   "id": "org.edgeever.plugins.code-pro",
   "name": "Code Pro: Syntax Highlight & Beautifier",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "apiVersion": "2",
   "settingsUi": "host",
-  "description": "Professional code block beautification with standard syntax highlighting, full SAP ABAP support, Mac-style header bar, Ray.so code card exporter, line highlight & focus mode, pretty printer, in-block search, and quick copy.",
+  "description": "Professional code block beautification with standard syntax highlighting, full SAP ABAP support, Mac-style header bar, highly customizable Ray.so code card exporter (font size, padding, resolution), line highlight & focus mode, pretty printer, in-block search, and quick copy.",
   "locales": {
     "zh-CN": {
       "name": "Code Pro: 代码高亮与代码块美化",
-      "description": "专业级代码块美化与语法高亮插件。原生适配 EdgeEver 编辑器，深度支持 SAP ABAP 全语法高亮，提供 Ray.so 风格代码卡片一键导出复制、点击行号重点高亮与暗淡聚焦模式、一键代码格式化 (Pretty Printer)、超长代码平滑渐变折叠与代码块内独立搜索功能。"
+      "description": "专业级代码块美化与语法高亮插件。原生适配 EdgeEver 编辑器，深度支持 SAP ABAP 全语法高亮，提供可深度定制的 Ray.so 风格代码卡片一键导出复制（可调节字号、留白间距、高清分辨率与投影）、点击行号重点高亮与暗淡聚焦模式、一键代码格式化 (Pretty Printer)、超长代码平滑渐变折叠与代码块内独立搜索功能。"
     }
   },
   "author": "zyhcs",
@@ -41,6 +41,39 @@
         "type": "boolean",
         "label": "允许点击行号高亮重点行与暗淡聚焦模式",
         "default": true
+      },
+      {
+        "key": "card_default_padding",
+        "type": "select",
+        "label": "代码卡片默认背景间距 (Padding)",
+        "default": "36",
+        "options": [
+          { "value": "16", "label": "紧凑 (16px)" },
+          { "value": "36", "label": "标准 (36px)" },
+          { "value": "56", "label": "宽松 (56px)" }
+        ]
+      },
+      {
+        "key": "card_default_font_size",
+        "type": "select",
+        "label": "代码卡片默认字号 (Font Size)",
+        "default": "13.5",
+        "options": [
+          { "value": "12", "label": "小号 (12px)" },
+          { "value": "13.5", "label": "标准 (13.5px)" },
+          { "value": "15", "label": "大号 (15px)" }
+        ]
+      },
+      {
+        "key": "card_default_scale",
+        "type": "select",
+        "label": "代码卡片导出分辨率 / 清晰度",
+        "default": "2",
+        "options": [
+          { "value": "1", "label": "1x 标准" },
+          { "value": "2", "label": "2x 视网膜高清 (推荐)" },
+          { "value": "3", "label": "3x 超清演示级" }
+        ]
       },
       {
         "key": "show_format_button",

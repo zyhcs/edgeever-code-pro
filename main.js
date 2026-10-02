@@ -437,20 +437,25 @@ function renderRayCardToCanvas(cardNode, options = {}) {
   const langLabel = options.langLabel || "CODE";
   const highlightedSet = options.highlightedSet || new Set();
 
+  const fontSize = Number(options.fontSize) || 13.5;
+  const padding = Number(options.padding) || 36;
+  const scale = Number(options.scale) || 2;
+  const hasShadow = options.hasShadow !== false;
+  const showWatermark = options.showWatermark !== false;
+
   const lineEls = Array.from(cardNode.querySelectorAll(".edgeever-code-line"));
   const linesCount = lineEls.length;
 
-  // 基础参数配置
-  const scale = 2; // 2x Retina 高清输出
-  const cardPadX = 40;
-  const cardPadY = 36;
-  const headerHeight = 38;
-  const winPadTop = 16;
-  const winPadBottom = 16;
-  const winPadX = 20;
-  const gutterWidth = showLineNumbers ? 42 : 0;
-  const lineHeight = 22;
-  const font = '13.5px ui-monospace, "JetBrains Mono", Menlo, Monaco, Consolas, monospace';
+  // 基础参数配置（随 fontSize 与 padding 弹性计算）
+  const cardPadX = padding;
+  const cardPadY = Math.round(padding * 0.88);
+  const headerHeight = Math.max(34, Math.round(fontSize * 2.6));
+  const lineHeight = Math.round(fontSize * 1.62);
+  const winPadTop = Math.round(fontSize * 1.1);
+  const winPadBottom = Math.round(fontSize * 1.1);
+  const winPadX = Math.round(fontSize * 1.35);
+  const gutterWidth = showLineNumbers ? Math.round(fontSize * 2.8) : 0;
+  const font = `${fontSize}px ui-monospace, "JetBrains Mono", Menlo, Monaco, Consolas, monospace`;
 
   // 测量最长的一行代码宽度
   const measureCanvas = document.createElement("canvas");
@@ -464,11 +469,11 @@ function renderRayCardToCanvas(cardNode, options = {}) {
     if (w > maxTextWidth) maxTextWidth = w;
   });
 
-  const windowWidth = Math.max(480, Math.ceil(maxTextWidth + gutterWidth + winPadX * 2));
+  const windowWidth = Math.max(460, Math.ceil(maxTextWidth + gutterWidth + winPadX * 2));
   const windowHeight = headerHeight + winPadTop + linesCount * lineHeight + winPadBottom;
 
   const totalWidth = windowWidth + cardPadX * 2;
-  const totalHeight = windowHeight + cardPadY * 2 + 20;
+  const totalHeight = windowHeight + cardPadY * 2 + (showWatermark ? 20 : 0);
 
   // 创建 Canvas
   const canvas = document.createElement("canvas");
@@ -491,7 +496,7 @@ function renderRayCardToCanvas(cardNode, options = {}) {
   grad.addColorStop(0.5, colors[1]);
   grad.addColorStop(1, colors[2]);
 
-  drawRoundedRect(ctx, 0, 0, totalWidth, totalHeight, 16);
+  drawRoundedRect(ctx, 0, 0, totalWidth, totalHeight, Math.max(12, Math.round(padding * 0.4)));
   ctx.fillStyle = grad;
   ctx.fill();
 
@@ -500,9 +505,13 @@ function renderRayCardToCanvas(cardNode, options = {}) {
   const winY = cardPadY;
 
   ctx.save();
-  ctx.shadowColor = "rgba(0, 0, 0, 0.45)";
-  ctx.shadowBlur = 32;
-  ctx.shadowOffsetY = 16;
+  if (hasShadow) {
+    ctx.shadowColor = "rgba(0, 0, 0, 0.45)";
+    ctx.shadowBlur = Math.round(padding * 0.85);
+    ctx.shadowOffsetY = Math.round(padding * 0.4);
+  } else {
+    ctx.shadowColor = "transparent";
+  }
   drawRoundedRect(ctx, winX, winY, windowWidth, windowHeight, 10);
   ctx.fillStyle = "#21252b";
   ctx.fill();
@@ -565,6 +574,7 @@ function renderRayCardToCanvas(cardNode, options = {}) {
   const contentStartY = winY + headerHeight + winPadTop;
   const codeStartX = winX + winPadX + (showLineNumbers ? gutterWidth : 0);
   const gutterX = winX + winPadX;
+  const baselineOffset = Math.round(fontSize * 1.05);
 
   lineEls.forEach((lineEl, idx) => {
     const lineNum = idx + 1;
@@ -582,10 +592,10 @@ function renderRayCardToCanvas(cardNode, options = {}) {
 
     // 绘制行号
     if (showLineNumbers) {
-      ctx.font = '12px ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace';
+      ctx.font = `${Math.max(11, fontSize - 1.5)}px ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace`;
       ctx.fillStyle = isHighlighted ? "#61afef" : "#5c6370";
       ctx.textAlign = "right";
-      ctx.fillText(String(lineNum), gutterX + gutterWidth - 14, y + 14);
+      ctx.fillText(String(lineNum), gutterX + gutterWidth - 14, y + baselineOffset);
     }
 
     // 绘制代码文本 Tokens
@@ -600,7 +610,7 @@ function renderRayCardToCanvas(cardNode, options = {}) {
     const tokens = extractTokensFromLine(lineEl);
     for (const tok of tokens) {
       ctx.fillStyle = tok.color;
-      ctx.fillText(tok.text, currentX, y + 14);
+      ctx.fillText(tok.text, currentX, y + baselineOffset);
       currentX += ctx.measureText(tok.text).width;
     }
     ctx.restore();
@@ -617,10 +627,12 @@ function renderRayCardToCanvas(cardNode, options = {}) {
   }
 
   // 5. 绘制右下角水印
-  ctx.font = "600 11px -apple-system, BlinkMacSystemFont, sans-serif";
-  ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
-  ctx.textAlign = "right";
-  ctx.fillText("EdgeEver Code Pro", totalWidth - cardPadX, totalHeight - 12);
+  if (showWatermark) {
+    ctx.font = "600 11px -apple-system, BlinkMacSystemFont, sans-serif";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
+    ctx.textAlign = "right";
+    ctx.fillText("EdgeEver Code Pro", totalWidth - cardPadX, totalHeight - 12);
+  }
 
   return canvas;
 }
@@ -657,7 +669,7 @@ async function copyCanvasImageToClipboard(canvas) {
   return false;
 }
 
-function openRayCodeCardModal(block, detectedLang, langLabel, context) {
+function openRayCodeCardModal(block, detectedLang, langLabel, context, settings = {}) {
   const existing = document.querySelector(".edgeever-code-card-modal-backdrop");
   if (existing) existing.remove();
 
@@ -666,6 +678,13 @@ function openRayCodeCardModal(block, detectedLang, langLabel, context) {
   const lines = rawCode.split(/\r?\n/);
   const linesCount = lines.length;
   const highlightedSet = block._highlightedLines || new Set();
+
+  // 当前属性配置状态
+  let currentPadding = settings.cardDefaultPadding || "36";
+  let currentFontSize = settings.cardDefaultFontSize || "13.5";
+  let currentScale = settings.cardDefaultScale || "2";
+  let currentHasShadow = true;
+  let currentShowWatermark = true;
 
   // 高亮代码并按行构建
   const rawHighlighted = highlightCode(rawCode, detectedLang);
@@ -687,24 +706,63 @@ function openRayCodeCardModal(block, detectedLang, langLabel, context) {
           <span>代码卡片导出 (Ray.so 风格)</span>
         </div>
         <div class="edgeever-code-card-controls">
-          <span class="edgeever-code-card-label">背景渐变：</span>
-          <div class="edgeever-code-gradient-picker">
-            <span class="gradient-dot active" data-gradient="aurora" title="极光紫" style="background: linear-gradient(135deg, #4f46e5, #7c3aed, #ec4899);"></span>
-            <span class="gradient-dot" data-gradient="cyber" title="科技蓝" style="background: linear-gradient(135deg, #0ea5e9, #3b82f6, #6366f1);"></span>
-            <span class="gradient-dot" data-gradient="sunset" title="落日暖橙" style="background: linear-gradient(135deg, #f59e0b, #ef4444, #ec4899);"></span>
-            <span class="gradient-dot" data-gradient="emerald" title="翡翠绿" style="background: linear-gradient(135deg, #059669, #10b981, #06b6d4);"></span>
-            <span class="gradient-dot" data-gradient="dark" title="黑曜石" style="background: linear-gradient(135deg, #18181b, #27272a, #3f3f46);"></span>
+          <!-- 背景色 -->
+          <div class="edgeever-code-card-control-item">
+            <span class="edgeever-code-card-label">背景：</span>
+            <div class="edgeever-code-gradient-picker">
+              <span class="gradient-dot active" data-gradient="aurora" title="极光紫" style="background: linear-gradient(135deg, #4f46e5, #7c3aed, #ec4899);"></span>
+              <span class="gradient-dot" data-gradient="cyber" title="科技蓝" style="background: linear-gradient(135deg, #0ea5e9, #3b82f6, #6366f1);"></span>
+              <span class="gradient-dot" data-gradient="sunset" title="落日暖橙" style="background: linear-gradient(135deg, #f59e0b, #ef4444, #ec4899);"></span>
+              <span class="gradient-dot" data-gradient="emerald" title="翡翠绿" style="background: linear-gradient(135deg, #059669, #10b981, #06b6d4);"></span>
+              <span class="gradient-dot" data-gradient="dark" title="黑曜石" style="background: linear-gradient(135deg, #18181b, #27272a, #3f3f46);"></span>
+            </div>
           </div>
-          <label class="edgeever-code-card-checkbox">
+
+          <!-- 间距 Padding -->
+          <div class="edgeever-code-card-control-item">
+            <span class="edgeever-code-card-label">边距：</span>
+            <div class="edgeever-code-card-segment" id="cardPaddingSegment">
+              <button type="button" class="edgeever-code-card-segment-btn${currentPadding === "16" ? " active" : ""}" data-val="16">16px</button>
+              <button type="button" class="edgeever-code-card-segment-btn${currentPadding === "36" ? " active" : ""}" data-val="36">36px</button>
+              <button type="button" class="edgeever-code-card-segment-btn${currentPadding === "56" ? " active" : ""}" data-val="56">56px</button>
+            </div>
+          </div>
+
+          <!-- 字号 Font Size -->
+          <div class="edgeever-code-card-control-item">
+            <span class="edgeever-code-card-label">字号：</span>
+            <div class="edgeever-code-card-segment" id="cardFontSizeSegment">
+              <button type="button" class="edgeever-code-card-segment-btn${currentFontSize === "12" ? " active" : ""}" data-val="12">小号</button>
+              <button type="button" class="edgeever-code-card-segment-btn${currentFontSize === "13.5" ? " active" : ""}" data-val="13.5">标准</button>
+              <button type="button" class="edgeever-code-card-segment-btn${currentFontSize === "15" ? " active" : ""}" data-val="15">大号</button>
+            </div>
+          </div>
+
+          <!-- 清晰度 Scale -->
+          <div class="edgeever-code-card-control-item">
+            <span class="edgeever-code-card-label">倍率：</span>
+            <div class="edgeever-code-card-segment" id="cardScaleSegment">
+              <button type="button" class="edgeever-code-card-segment-btn${currentScale === "1" ? " active" : ""}" data-val="1">1x</button>
+              <button type="button" class="edgeever-code-card-segment-btn${currentScale === "2" ? " active" : ""}" data-val="2">2x 高清</button>
+              <button type="button" class="edgeever-code-card-segment-btn${currentScale === "3" ? " active" : ""}" data-val="3">3x 极清</button>
+            </div>
+          </div>
+
+          <!-- 开关项 -->
+          <label class="edgeever-code-card-checkbox" title="是否在卡片中显示代码行号">
             <input type="checkbox" id="rayCardShowLines" checked>
-            <span>显示行号</span>
+            <span>行号</span>
+          </label>
+          <label class="edgeever-code-card-checkbox" title="是否显示外围立体投影">
+            <input type="checkbox" id="rayCardShowShadow" checked>
+            <span>阴影</span>
           </label>
         </div>
         <button type="button" class="edgeever-code-card-modal-close" title="关闭 (Esc)">✕</button>
       </div>
 
       <div class="edgeever-code-card-preview-viewport">
-        <div class="edgeever-ray-card${highlightedSet.size > 0 ? " has-line-focus" : ""}" id="rayCardNode" data-gradient="aurora">
+        <div class="edgeever-ray-card${highlightedSet.size > 0 ? " has-line-focus" : ""}" id="rayCardNode" data-gradient="aurora" data-padding="${currentPadding}" data-font-size="${currentFontSize}">
           <div class="edgeever-ray-window">
             <div class="edgeever-ray-header">
               <div class="edgeever-code-mac-dots">
@@ -724,7 +782,7 @@ function openRayCodeCardModal(block, detectedLang, langLabel, context) {
       </div>
 
       <div class="edgeever-code-card-modal-footer">
-        <span class="edgeever-code-card-tip">支持导出视网膜 2x 高清图，一键粘贴到微信、飞书或文档中</span>
+        <span class="edgeever-code-card-tip">所见即所得：支持调节背景间距、字号大小与视网膜超清倍率</span>
         <div class="edgeever-code-card-footer-btns">
           <button type="button" class="edgeever-code-card-btn copy-card-btn">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1"></path></svg>
@@ -744,11 +802,12 @@ function openRayCodeCardModal(block, detectedLang, langLabel, context) {
   const cardNode = backdrop.querySelector("#rayCardNode");
   const gutterNode = backdrop.querySelector("#rayCardGutter");
   const showLinesCheck = backdrop.querySelector("#rayCardShowLines");
+  const showShadowCheck = backdrop.querySelector("#rayCardShowShadow");
   const copyBtn = backdrop.querySelector(".copy-card-btn");
   const downloadBtn = backdrop.querySelector(".download-card-btn");
   const closeBtn = backdrop.querySelector(".edgeever-code-card-modal-close");
 
-  // 渐变背景切换
+  // 1. 渐变背景切换
   backdrop.querySelectorAll(".gradient-dot").forEach((dot) => {
     dot.onclick = () => {
       backdrop.querySelectorAll(".gradient-dot").forEach((d) => d.classList.remove("active"));
@@ -757,9 +816,44 @@ function openRayCodeCardModal(block, detectedLang, langLabel, context) {
     };
   });
 
-  // 行号显隐切换
+  // 2. 边距切换
+  backdrop.querySelectorAll("#cardPaddingSegment .edgeever-code-card-segment-btn").forEach((btn) => {
+    btn.onclick = () => {
+      backdrop.querySelectorAll("#cardPaddingSegment .edgeever-code-card-segment-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentPadding = btn.dataset.val;
+      cardNode.setAttribute("data-padding", currentPadding);
+    };
+  });
+
+  // 3. 字号切换
+  backdrop.querySelectorAll("#cardFontSizeSegment .edgeever-code-card-segment-btn").forEach((btn) => {
+    btn.onclick = () => {
+      backdrop.querySelectorAll("#cardFontSizeSegment .edgeever-code-card-segment-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentFontSize = btn.dataset.val;
+      cardNode.setAttribute("data-font-size", currentFontSize);
+    };
+  });
+
+  // 4. 倍率切换
+  backdrop.querySelectorAll("#cardScaleSegment .edgeever-code-card-segment-btn").forEach((btn) => {
+    btn.onclick = () => {
+      backdrop.querySelectorAll("#cardScaleSegment .edgeever-code-card-segment-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentScale = btn.dataset.val;
+    };
+  });
+
+  // 5. 行号显隐切换
   showLinesCheck.onchange = () => {
     gutterNode.style.display = showLinesCheck.checked ? "block" : "none";
+  };
+
+  // 6. 阴影显隐切换
+  showShadowCheck.onchange = () => {
+    currentHasShadow = showShadowCheck.checked;
+    cardNode.classList.toggle("no-shadow", !currentHasShadow);
   };
 
   // 关闭弹窗
@@ -778,15 +872,25 @@ function openRayCodeCardModal(block, detectedLang, langLabel, context) {
   };
   document.addEventListener("keydown", handleKeydown);
 
+  // 获取当前导出配置
+  function getCurrentRenderOptions() {
+    return {
+      showLineNumbers: showLinesCheck.checked,
+      langLabel: langLabel,
+      highlightedSet: highlightedSet,
+      fontSize: currentFontSize,
+      padding: currentPadding,
+      scale: currentScale,
+      hasShadow: currentHasShadow,
+      showWatermark: currentShowWatermark,
+    };
+  }
+
   // 复制图片到剪贴板
   copyBtn.onclick = async () => {
     try {
       copyBtn.querySelector("span").textContent = "正在生成...";
-      const canvas = renderRayCardToCanvas(cardNode, {
-        showLineNumbers: showLinesCheck.checked,
-        langLabel: langLabel,
-        highlightedSet: highlightedSet,
-      });
+      const canvas = renderRayCardToCanvas(cardNode, getCurrentRenderOptions());
 
       const copied = await copyCanvasImageToClipboard(canvas);
       if (copied) {
@@ -817,11 +921,7 @@ function openRayCodeCardModal(block, detectedLang, langLabel, context) {
   downloadBtn.onclick = () => {
     try {
       downloadBtn.querySelector("span").textContent = "正在生成...";
-      const canvas = renderRayCardToCanvas(cardNode, {
-        showLineNumbers: showLinesCheck.checked,
-        langLabel: langLabel,
-        highlightedSet: highlightedSet,
-      });
+      const canvas = renderRayCardToCanvas(cardNode, getCurrentRenderOptions());
 
       const ok = downloadCanvasImage(canvas, `code-card-${Date.now()}.png`);
       if (ok) {
@@ -846,6 +946,9 @@ export default {
       showLanguageBadge: true,
       showCardButton: true,
       enableLineHighlight: true,
+      cardDefaultPadding: "36",
+      cardDefaultFontSize: "13.5",
+      cardDefaultScale: "2",
       showFormatButton: true,
       showSearchButton: true,
       showCollapseButton: true,
@@ -863,6 +966,9 @@ export default {
         const lang = await context.settings.get("show_language_badge");
         const card = await context.settings.get("show_card_button");
         const lineHl = await context.settings.get("enable_line_highlight");
+        const cardPad = await context.settings.get("card_default_padding");
+        const cardFont = await context.settings.get("card_default_font_size");
+        const cardScale = await context.settings.get("card_default_scale");
         const format = await context.settings.get("show_format_button");
         const search = await context.settings.get("show_search_button");
         const collapse = await context.settings.get("show_collapse_button");
@@ -877,6 +983,9 @@ export default {
         if (lang !== null) settings.showLanguageBadge = lang;
         if (card !== null) settings.showCardButton = card;
         if (lineHl !== null) settings.enableLineHighlight = lineHl;
+        if (cardPad) settings.cardDefaultPadding = String(cardPad);
+        if (cardFont) settings.cardDefaultFontSize = String(cardFont);
+        if (cardScale) settings.cardDefaultScale = String(cardScale);
         if (format !== null) settings.showFormatButton = format;
         if (search !== null) settings.showSearchButton = search;
         if (collapse !== null) settings.showCollapseButton = collapse;
@@ -1194,7 +1303,7 @@ export default {
         cardBtn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
-          openRayCodeCardModal(block, detectedLang, matchedLang.label, context);
+          openRayCodeCardModal(block, detectedLang, matchedLang.label, context, settings);
         };
         right.appendChild(cardBtn);
       }
