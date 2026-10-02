@@ -2,14 +2,14 @@
   "type": "plugin",
   "id": "org.edgeever.plugins.code-pro",
   "name": "Code Pro: Syntax Highlight & Beautifier",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "apiVersion": "2",
   "settingsUi": "host",
-  "description": "Professional code block beautification with standard syntax highlighting, full SAP ABAP support, Mac-style header bar, language badge with selector, code folding, line numbers, and quick copy.",
+  "description": "Professional code block beautification with standard syntax highlighting, full SAP ABAP support, Mac-style header bar, language badge with selector, code folding, pretty printer, in-block search, gradient auto-folding, line numbers, and quick copy.",
   "locales": {
     "zh-CN": {
       "name": "Code Pro: 代码高亮与代码块美化",
-      "description": "专业级代码块美化与语法高亮插件。原生适配 EdgeEver 编辑器，深度支持 SAP ABAP 全语法高亮，提供代码块一键折叠、可点击切换语言的 Mac 窗口栏、行号展示与一键复制功能。"
+      "description": "专业级代码块美化与语法高亮插件。原生适配 EdgeEver 编辑器，深度支持 SAP ABAP 全语法高亮，提供一键代码格式化 (Pretty Printer)、超长代码平滑渐变折叠、代码块内独立搜索、可点击切换语言的 Mac 窗口栏、行号展示与一键复制功能。"
     }
   },
   "author": "zyhcs",
@@ -31,10 +31,34 @@
         "default": true
       },
       {
+        "key": "show_format_button",
+        "type": "boolean",
+        "label": "显示一键格式化按钮 (Pretty Printer)",
+        "default": true
+      },
+      {
+        "key": "show_search_button",
+        "type": "boolean",
+        "label": "显示代码块内独立搜索按钮",
+        "default": true
+      },
+      {
         "key": "show_collapse_button",
         "type": "boolean",
         "label": "显示代码块折叠/展开按钮",
         "default": true
+      },
+      {
+        "key": "auto_fold_tall_code",
+        "type": "boolean",
+        "label": "超长代码块自动折叠（带平滑渐变遮罩）",
+        "default": true
+      },
+      {
+        "key": "max_code_height",
+        "type": "number",
+        "label": "超长代码折叠阈值高度 (像素，默认 340)",
+        "default": 340
       },
       {
         "key": "show_copy_button",

@@ -2,6 +2,7 @@
  * EdgeEver Code Pro Plugin
  * 专业级语法高亮引擎与代码块美化器
  * 原生深度适配 EdgeEver 编辑器与全语法高亮
+ * v1.0.5 - 支持 Pretty Printer 格式化、超长渐变折叠、代码块内独立搜索
  */
 
 // ==================== 1. 专业级多语言高亮引擎 ====================
@@ -19,7 +20,7 @@ const GRAMMARS = {
     {
       type: "keyword",
       pattern:
-        /\b(?:REPORT|PROGRAM|DATA|TYPES|CONSTANTS|STATICS|PARAMETERS|SELECT-OPTIONS|FIELD-SYMBOLS|CLASS|ENDCLASS|INTERFACE|ENDINTERFACE|METHOD|ENDMETHOD|MODULE|ENDMODULE|FORM|ENDFORM|FUNCTION|ENDFUNCTION|DO|ENDDO|WHILE|ENDWHILE|LOOP|ENDLOOP|AT|ENDAT|IF|ELSEIF|ELSE|ENDIF|CASE|WHEN|ENDCASE|TRY|CATCH|CLEANUP|ENDTRY|CHECK|EXIT|CONTINUE|RETURN|REJECT|STOP|CALL|METHOD|RECEIVING|IMPORTING|EXPORTING|CHANGING|TABLES|EXCEPTIONS|PERFORM|SUBMIT|LEAVE|RAISE|MESSAGE|SELECT|SINGLE|FROM|INTO|CORRESPONDING|FIELDS|WHERE|GROUP|BY|HAVING|ORDER|APPENDING|INSERT|UPDATE|MODIFY|DELETE|COMMIT|WORK|ROLLBACK|OPEN|FETCH|CLOSE|READ|TABLE|APPEND|SORT|ASSIGN|UNASSIGN|CLEAR|FREE|MOVE|MOVE-CORRESPONDING|CONCATENATE|SPLIT|CONDENSE|TRANSLATE|REPLACE|SEARCH|SHIFT|DESCRIBE|COMPUTE|ADD|SUBTRACT|MULTIPLY|DIVIDE|TYPE|LIKE|REF|TO|VALUE|INITIAL|OPTIONAL|DEFAULT|STANDARD|SORTED|HASHED|INDEX|KEY|WITH|TRANSPORTING|NO|FIELDS|UP|ROWS|EQ|NE|LT|LE|GT|GE|AND|OR|NOT|BETWEEN|IN|LIKE|IS|ASSIGNED|BOUND|DEFINITION|IMPLEMENTATION|PUBLIC|PROTECTED|PRIVATE|ABSTRACT|FINAL|FOR|TESTING|INHERITING|INTERFACES|EVENTS|ALIASES|CREATE|OBJECT|SET|GET|HANDLER|ACTIVATION|STATUS|TITLEBAR)\b/gi,
+        /\b(?:REPORT|PROGRAM|DATA|TYPES|CONSTANTS|STATICS|PARAMETERS|SELECT-OPTIONS|FIELD-SYMBOLS|CLASS|ENDCLASS|INTERFACE|ENDINTERFACE|METHOD|ENDMETHOD|MODULE|ENDMODULE|FORM|ENDFORM|FUNCTION|ENDFUNCTION|DO|ENDDO|WHILE|ENDWHILE|LOOP|ENDLOOP|AT|ENDAT|IF|ELSEIF|ELSE|ENDIF|CASE|WHEN|ENDCASE|TRY|CATCH|CLEANUP|ENDTRY|CHECK|EXIT|CONTINUE|RETURN|REJECT|STOP|CALL|METHOD|RECEIVING|IMPORTING|EXPORTING|CHANGING|TABLES|EXCEPTIONS|PERFORM|SUBMIT|LEAVE|RAISE|MESSAGE|SELECT|SINGLE|FROM|INTO|CORRESPONDING|FIELDS|WHERE|GROUP|BY|HAVING|ORDER|APPENDING|INSERT|UPDATE|MODIFY|DELETE|COMMIT|WORK|ROLLBACK|OPEN|FETCH|CLOSE|READ|TABLE|APPEND|SORT|ASSIGN|UNASSIGN|CLEAR|FREE|MOVE|MOVE-CORRESPONDING|CONCATENATE|SPLIT|CONDENSE|TRANSLATE|REPLACE|SEARCH|SHIFT|DESCRIBE|COMPUTE|ADD|SUBTRACT|MULTIPLY|DIVIDE|TYPE|LIKE|REF|TO|VALUE|INITIAL|OPTIONAL|DEFAULT|STANDARD|SORTED|HASHED|INDEX|KEY|WITH|TRANSPORTING|NO|UP|ROWS|EQ|NE|LT|LE|GT|GE|AND|OR|NOT|BETWEEN|IN|IS|ASSIGNED|BOUND|DEFINITION|IMPLEMENTATION|PUBLIC|PROTECTED|PRIVATE|ABSTRACT|FINAL|FOR|TESTING|INHERITING|INTERFACES|EVENTS|ALIASES|CREATE|OBJECT|SET|GET|HANDLER|ACTIVATION|STATUS|TITLEBAR)\b/gi,
     },
     // 操作符与箭头指针
     { type: "operator", pattern: /->|=>|[-+*\/=<>~]|&&|\|\|/g },
@@ -114,7 +115,11 @@ const SUPPORTED_LANGUAGES = [
 ];
 
 function escapeHtml(s) {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function highlightCode(code, lang) {
@@ -176,6 +181,140 @@ function highlightCode(code, lang) {
   return html;
 }
 
+// ==================== 2. Pretty Printer 格式化引擎 ====================
+function formatAbapCode(code) {
+  const literals = [];
+  let placeholderIndex = 0;
+
+  // 1. 占位保护字符串与注释
+  let masked = code.replace(
+    /('(?:''|[^'\r\n])*'|`(?:``|[^`\r\n])*`|\|(?:\\\||[^|\r\n])*\||(?:^\*|\n\*)[^\r\n]*|"[^\r\n]*)/g,
+    (match) => {
+      const key = `___ABAP_LIT_${placeholderIndex++}___`;
+      literals.push({ key, value: match });
+      return key;
+    }
+  );
+
+  // 2. 核心关键字全量大写化
+  const keywords = [
+    "REPORT", "PROGRAM", "DATA", "TYPES", "CONSTANTS", "STATICS", "PARAMETERS", "SELECT-OPTIONS",
+    "FIELD-SYMBOLS", "CLASS", "ENDCLASS", "INTERFACE", "ENDINTERFACE", "METHOD", "ENDMETHOD",
+    "MODULE", "ENDMODULE", "FORM", "ENDFORM", "FUNCTION", "ENDFUNCTION", "DO", "ENDDO",
+    "WHILE", "ENDWHILE", "LOOP", "ENDLOOP", "AT", "ENDAT", "IF", "ELSEIF", "ELSE", "ENDIF",
+    "CASE", "WHEN", "ENDCASE", "TRY", "CATCH", "CLEANUP", "ENDTRY", "CHECK", "EXIT", "CONTINUE",
+    "RETURN", "REJECT", "STOP", "CALL", "METHOD", "RECEIVING", "IMPORTING", "EXPORTING", "CHANGING",
+    "TABLES", "EXCEPTIONS", "PERFORM", "SUBMIT", "LEAVE", "RAISE", "MESSAGE", "SELECT", "SINGLE",
+    "FROM", "INTO", "CORRESPONDING", "FIELDS", "WHERE", "GROUP", "BY", "HAVING", "ORDER",
+    "APPENDING", "INSERT", "UPDATE", "MODIFY", "DELETE", "COMMIT", "WORK", "ROLLBACK", "OPEN",
+    "FETCH", "CLOSE", "READ", "TABLE", "APPEND", "SORT", "ASSIGN", "UNASSIGN", "CLEAR", "FREE",
+    "MOVE", "MOVE-CORRESPONDING", "CONCATENATE", "SPLIT", "CONDENSE", "TRANSLATE", "REPLACE",
+    "SEARCH", "SHIFT", "DESCRIBE", "COMPUTE", "ADD", "SUBTRACT", "MULTIPLY", "DIVIDE", "TYPE",
+    "LIKE", "REF", "TO", "VALUE", "INITIAL", "OPTIONAL", "DEFAULT", "STANDARD", "SORTED", "HASHED",
+    "INDEX", "KEY", "WITH", "TRANSPORTING", "NO", "UP", "ROWS", "EQ", "NE", "LT", "LE", "GT", "GE",
+    "AND", "OR", "NOT", "BETWEEN", "IN", "IS", "ASSIGNED", "BOUND", "DEFINITION", "IMPLEMENTATION",
+    "PUBLIC", "PROTECTED", "PRIVATE", "ABSTRACT", "FINAL", "FOR", "TESTING", "INHERITING",
+    "INTERFACES", "EVENTS", "ALIASES", "CREATE", "OBJECT", "SET", "GET", "HANDLER", "ACTIVATION",
+    "STATUS", "TITLEBAR", "SY-SUBRC", "SY-TABIX", "SY-INDEX", "SY-UCOMM", "SY-DATUM", "SY-UZEIT",
+    "SY-UNAME", "SY-MANDT", "SY-DYNNR", "SY-TCODE"
+  ];
+  const kwRegex = new RegExp(`\\b(?:${keywords.join("|")})\\b`, "gi");
+  masked = masked.replace(kwRegex, (m) => m.toUpperCase());
+
+  // 3. 冒号格式规范化 (如 DATA:a -> DATA: a)
+  masked = masked.replace(/([A-Z0-9_]+):([^\s])/gi, "$1: $2");
+
+  // 4. 恢复占位字面量
+  for (const item of literals) {
+    masked = masked.replace(item.key, item.value);
+  }
+
+  // 5. 逐行智能块级缩进对齐
+  const lines = masked.split(/\r?\n/);
+  let indentLevel = 0;
+  const formattedLines = [];
+
+  const increaseIndentBefore = /^\s*(?:IF|LOOP|DO|WHILE|CASE|TRY|FORM|METHOD|CLASS\s+[A-Z0-9_]+\s+(?:DEFINITION|IMPLEMENTATION))\b/i;
+  const decreaseIndentSelf = /^\s*(?:ENDIF|ENDLOOP|ENDDO|ENDWHILE|ENDCASE|ENDTRY|ENDFORM|ENDMETHOD|ENDCLASS|ELSE|ELSEIF|CATCH|CLEANUP|WHEN)\b/i;
+  const increaseIndentAfterSelf = /^\s*(?:ELSE|ELSEIF|CATCH|CLEANUP|WHEN)\b/i;
+
+  for (let line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      formattedLines.push("");
+      continue;
+    }
+    if (trimmed.startsWith("*")) {
+      formattedLines.push(trimmed);
+      continue;
+    }
+    if (decreaseIndentSelf.test(trimmed)) {
+      indentLevel = Math.max(0, indentLevel - 1);
+    }
+    const currentIndent = "  ".repeat(indentLevel);
+    formattedLines.push(currentIndent + trimmed);
+    if (increaseIndentBefore.test(trimmed) || increaseIndentAfterSelf.test(trimmed)) {
+      indentLevel++;
+    }
+  }
+  return formattedLines.join("\n");
+}
+
+function formatJsonCode(code) {
+  try {
+    const obj = JSON.parse(code);
+    return JSON.stringify(obj, null, 2);
+  } catch (_) {
+    return code;
+  }
+}
+
+function formatSqlCode(code) {
+  const literals = [];
+  let placeholderIndex = 0;
+  let masked = code.replace(/('(?:''|[^'\r\n])*'|--[^\r\n]*|\/\*[\s\S]*?\*\/)/g, (match) => {
+    const key = `___SQL_LIT_${placeholderIndex++}___`;
+    literals.push({ key, value: match });
+    return key;
+  });
+
+  const keywords = [
+    "SELECT", "FROM", "WHERE", "GROUP BY", "ORDER BY", "HAVING", "LIMIT", "OFFSET",
+    "INSERT INTO", "VALUES", "UPDATE", "SET", "DELETE", "LEFT JOIN", "RIGHT JOIN",
+    "INNER JOIN", "OUTER JOIN", "CROSS JOIN", "JOIN", "ON", "AND", "OR", "UNION ALL",
+    "UNION", "AS", "DISTINCT", "CASE", "WHEN", "THEN", "ELSE", "END", "NOT", "IN",
+    "IS NULL", "IS NOT NULL", "LIKE", "BETWEEN", "CREATE TABLE", "ALTER TABLE", "DROP TABLE"
+  ];
+  const kwRegex = new RegExp(`\\b(?:${keywords.join("|")})\\b`, "gi");
+  masked = masked.replace(kwRegex, (m) => m.toUpperCase());
+
+  for (const item of literals) {
+    masked = masked.replace(item.key, item.value);
+  }
+
+  const lines = masked.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  return lines.join("\n");
+}
+
+function formatCode(code, lang) {
+  const l = (lang || "").toLowerCase();
+  if (l === "abap") {
+    return formatAbapCode(code);
+  } else if (l === "json") {
+    return formatJsonCode(code);
+  } else if (l === "sql") {
+    return formatSqlCode(code);
+  } else {
+    // 通用语言清理：去除行尾空格、统一换行、压缩连续空行
+    return code
+      .split(/\r?\n/)
+      .map((line) => line.trimEnd())
+      .join("\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+}
+
 // 跨平台健壮复制代码到剪贴板
 async function copyCodeToClipboard(text, block) {
   // 1. EdgeEver 桌面端专用原生桥接（最高优先级）
@@ -221,13 +360,17 @@ async function copyCodeToClipboard(text, block) {
   }
 }
 
-// ==================== 2. 插件主生命周期定义 ====================
+// ==================== 3. 插件主生命周期定义 ====================
 export default {
   async activate(context) {
     const settings = {
       showMacDots: true,
       showLanguageBadge: true,
+      showFormatButton: true,
+      showSearchButton: true,
       showCollapseButton: true,
+      autoFoldTallCode: true,
+      maxCodeHeight: 340,
       showCopyButton: true,
       showLineNumbers: true,
       autoDetectAbap: true,
@@ -238,7 +381,11 @@ export default {
       try {
         const dots = await context.settings.get("show_mac_dots");
         const lang = await context.settings.get("show_language_badge");
+        const format = await context.settings.get("show_format_button");
+        const search = await context.settings.get("show_search_button");
         const collapse = await context.settings.get("show_collapse_button");
+        const autoFold = await context.settings.get("auto_fold_tall_code");
+        const maxHeight = await context.settings.get("max_code_height");
         const copy = await context.settings.get("show_copy_button");
         const lines = await context.settings.get("show_line_numbers");
         const abap = await context.settings.get("auto_detect_abap");
@@ -246,7 +393,11 @@ export default {
 
         if (dots !== null) settings.showMacDots = dots;
         if (lang !== null) settings.showLanguageBadge = lang;
+        if (format !== null) settings.showFormatButton = format;
+        if (search !== null) settings.showSearchButton = search;
         if (collapse !== null) settings.showCollapseButton = collapse;
+        if (autoFold !== null) settings.autoFoldTallCode = autoFold;
+        if (maxHeight !== null && Number(maxHeight) > 100) settings.maxCodeHeight = Number(maxHeight);
         if (copy !== null) settings.showCopyButton = copy;
         if (lines !== null) settings.showLineNumbers = lines;
         if (abap !== null) settings.autoDetectAbap = abap;
@@ -281,7 +432,6 @@ export default {
       block.setAttribute("data-language", newLangId);
       block.dataset.language = newLangId;
 
-      // 尝试通知 TipTap 编辑器更新节点语言属性
       try {
         const pm = document.querySelector(".ProseMirror");
         let editor = pm?.pmViewDesc?.view?.editor;
@@ -306,8 +456,63 @@ export default {
         }
       } catch (_) {}
 
-      // 强制重绘高亮
       delete block.dataset.codeProProcessed;
+      beautifyCodeBlock(block, true);
+    }
+
+    /**
+     * 更新代码块源码内容（优雅分发 TipTap 事务或 DOM 兜底）
+     */
+    function updateCodeBlockText(block, sourceEl, newText) {
+      let updatedViaEditor = false;
+      try {
+        const pm = document.querySelector(".ProseMirror");
+        let editor = pm?.pmViewDesc?.view?.editor;
+        if (!editor && pm) {
+          const fiberKey = Object.keys(pm).find(
+            (k) => k.startsWith("__reactFiber$") || k.startsWith("__reactInternalInstance$")
+          );
+          if (fiberKey) {
+            let fiber = pm[fiberKey];
+            while (fiber) {
+              if (fiber.memoizedProps?.editor) {
+                editor = fiber.memoizedProps.editor;
+                break;
+              }
+              fiber = fiber.return;
+            }
+          }
+        }
+        if (editor && editor.view) {
+          const pos = editor.view.posAtDOM(sourceEl, 0);
+          if (typeof pos === "number" && pos >= 0) {
+            const resolved = editor.view.state.doc.resolve(pos);
+            let depth = resolved.depth;
+            while (depth > 0 && resolved.node(depth).type.name !== "codeBlock") {
+              depth--;
+            }
+            if (depth > 0) {
+              const from = resolved.start(depth);
+              const to = resolved.end(depth);
+              const tr = editor.view.state.tr.replaceWith(
+                from,
+                to,
+                editor.view.state.schema.text(newText)
+              );
+              editor.view.dispatch(tr);
+              updatedViaEditor = true;
+            }
+          }
+        }
+      } catch (_) {}
+
+      if (!updatedViaEditor) {
+        sourceEl.textContent = newText;
+        sourceEl.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+
+      delete block.dataset.codeProProcessed;
+      delete block.dataset.originalRawCode;
       beautifyCodeBlock(block, true);
     }
 
@@ -326,6 +531,8 @@ export default {
 
       const rawText = sourceEl.innerText || sourceEl.textContent || "";
       if (!rawText.trim()) return;
+
+      block.dataset.originalRawCode = rawText;
 
       // 1. 语言识别与嗅探
       let detectedLang = (block.getAttribute("data-language") || block.dataset.language || "").trim().toLowerCase();
@@ -363,6 +570,7 @@ export default {
         "edgeever-theme-github-light"
       );
       block.classList.add(`edgeever-theme-${settings.codeTheme}`);
+      block.style.setProperty("--code-max-height", `${settings.maxCodeHeight}px`);
 
       // 3. 构建/更新顶部 Mac 风格工具栏
       let toolbar = block.querySelector(".edgeever-code-pro-toolbar");
@@ -457,6 +665,216 @@ export default {
       const right = document.createElement("div");
       right.className = "edgeever-code-pro-right";
 
+      // 1) 一键格式化 Pretty Printer 按钮
+      if (settings.showFormatButton) {
+        const formatBtn = document.createElement("button");
+        formatBtn.className = "edgeever-code-tool-btn edgeever-code-format-btn";
+        formatBtn.type = "button";
+        formatBtn.setAttribute("contenteditable", "false");
+        formatBtn.title = "一键格式化 (Pretty Printer)";
+        formatBtn.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"></path>
+          </svg>
+          <span>排版</span>
+        `;
+        formatBtn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const currentCode = sourceEl.innerText || sourceEl.textContent || "";
+          const formatted = formatCode(currentCode, detectedLang);
+          if (formatted.trim() === currentCode.trim()) {
+            context.ui?.showNotice?.("代码排版已是最优格式，无需调整！");
+            return;
+          }
+          updateCodeBlockText(block, sourceEl, formatted);
+          const span = formatBtn.querySelector("span");
+          if (span) span.textContent = "已排版 ✓";
+          setTimeout(() => {
+            if (span) span.textContent = "排版";
+          }, 2000);
+          context.ui?.showNotice?.("代码排版美化完成！");
+        };
+        right.appendChild(formatBtn);
+      }
+
+      // 2) 代码块内独立搜索按钮与搜索面板
+      let searchBar = block.querySelector(".edgeever-code-search-bar");
+      if (!searchBar) {
+        searchBar = document.createElement("div");
+        searchBar.className = "edgeever-code-search-bar";
+        searchBar.setAttribute("contenteditable", "false");
+        searchBar.innerHTML = `
+          <div class="edgeever-code-search-input-wrap">
+            <svg class="edgeever-code-search-icon-inside" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" class="edgeever-code-search-input" placeholder="在代码块中查找...">
+          </div>
+          <span class="edgeever-code-search-count">0/0</span>
+          <button type="button" class="edgeever-code-search-nav-btn edgeever-code-search-prev" title="上一个 (Shift+Enter)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
+          </button>
+          <button type="button" class="edgeever-code-search-nav-btn edgeever-code-search-next" title="下一个 (Enter)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <button type="button" class="edgeever-code-search-close-btn" title="关闭 (Esc)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        `;
+        block.insertBefore(searchBar, toolbar.nextSibling);
+      }
+
+      // 绑定搜索逻辑
+      let searchCurrentIdx = 0;
+      let searchMatchesCount = 0;
+      const searchInput = searchBar.querySelector(".edgeever-code-search-input");
+      const searchCount = searchBar.querySelector(".edgeever-code-search-count");
+      const prevBtn = searchBar.querySelector(".edgeever-code-search-prev");
+      const nextBtn = searchBar.querySelector(".edgeever-code-search-next");
+      const closeBtn = searchBar.querySelector(".edgeever-code-search-close-btn");
+
+      function updateSearchHighlights() {
+        const query = searchInput.value;
+        const text = block.dataset.originalRawCode || sourceEl.innerText || sourceEl.textContent || "";
+        if (!query) {
+          searchMatchesCount = 0;
+          searchCurrentIdx = 0;
+          searchCount.textContent = "0/0";
+          sourceEl.innerHTML = highlightCode(text, detectedLang);
+          return;
+        }
+
+        const safeQuery = escapeRegex(query);
+        const re = new RegExp(safeQuery, "gi");
+        const parts = [];
+        let cursor = 0;
+        let match;
+        const hitIndexes = [];
+
+        while ((match = re.exec(text)) !== null) {
+          hitIndexes.push({ start: match.index, end: match.index + match[0].length, text: match[0] });
+        }
+
+        searchMatchesCount = hitIndexes.length;
+        if (searchMatchesCount === 0) {
+          searchCurrentIdx = 0;
+          searchCount.textContent = "0/0";
+          sourceEl.innerHTML = highlightCode(text, detectedLang);
+          return;
+        }
+
+        if (searchCurrentIdx >= searchMatchesCount) searchCurrentIdx = 0;
+        if (searchCurrentIdx < 0) searchCurrentIdx = searchMatchesCount - 1;
+
+        searchCount.textContent = `${searchCurrentIdx + 1}/${searchMatchesCount}`;
+
+        let highlightedHtml = "";
+        cursor = 0;
+        hitIndexes.forEach((hit, idx) => {
+          if (hit.start > cursor) {
+            highlightedHtml += escapeHtml(text.slice(cursor, hit.start));
+          }
+          const isCurrent = idx === searchCurrentIdx;
+          highlightedHtml += `<mark class="edgeever-code-search-hit${
+            isCurrent ? " edgeever-code-search-current" : ""
+          }" data-search-idx="${idx}">${escapeHtml(hit.text)}</mark>`;
+          cursor = hit.end;
+        });
+        if (cursor < text.length) {
+          highlightedHtml += escapeHtml(text.slice(cursor));
+        }
+        sourceEl.innerHTML = highlightedHtml;
+
+        const currentMark = sourceEl.querySelector(".edgeever-code-search-current");
+        if (currentMark) {
+          currentMark.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+      }
+
+      function stepSearch(delta) {
+        if (searchMatchesCount <= 0) return;
+        searchCurrentIdx = (searchCurrentIdx + delta + searchMatchesCount) % searchMatchesCount;
+        updateSearchHighlights();
+      }
+
+      function closeSearch() {
+        block.classList.remove("has-search-open");
+        searchInput.value = "";
+        const text = block.dataset.originalRawCode || sourceEl.innerText || sourceEl.textContent || "";
+        sourceEl.innerHTML = highlightCode(text, detectedLang);
+      }
+
+      searchInput.oninput = () => {
+        searchCurrentIdx = 0;
+        updateSearchHighlights();
+      };
+
+      searchInput.onkeydown = (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          stepSearch(e.shiftKey ? -1 : 1);
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          closeSearch();
+        }
+      };
+
+      prevBtn.onclick = (e) => {
+        e.stopPropagation();
+        stepSearch(-1);
+      };
+
+      nextBtn.onclick = (e) => {
+        e.stopPropagation();
+        stepSearch(1);
+      };
+
+      closeBtn.onclick = (e) => {
+        e.stopPropagation();
+        closeSearch();
+      };
+
+      if (settings.showSearchButton) {
+        const searchBtn = document.createElement("button");
+        searchBtn.className = "edgeever-code-tool-btn edgeever-code-search-btn";
+        searchBtn.type = "button";
+        searchBtn.setAttribute("contenteditable", "false");
+        searchBtn.title = "在代码块中搜索";
+        searchBtn.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <span>搜索</span>
+        `;
+        searchBtn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const isOpen = block.classList.toggle("has-search-open");
+          if (isOpen) {
+            // 如果原本是完全折叠状态，先自动展开
+            if (block.classList.contains("is-collapsed")) {
+              toggleCollapse();
+            }
+            // 如果原本超长折叠，自动展开以便阅读搜索命中
+            if (block.classList.contains("is-overflow-collapsed")) {
+              block.classList.remove("is-overflow-collapsed");
+              block.dataset.userExpanded = "true";
+              const mask = block.querySelector(".edgeever-code-fold-mask");
+              if (mask) mask.style.display = "none";
+            }
+            setTimeout(() => {
+              searchInput.focus();
+              searchInput.select();
+            }, 60);
+          } else {
+            closeSearch();
+          }
+        };
+        right.appendChild(searchBtn);
+      }
+
       // 折叠/展开控制逻辑
       let collapseBtn = null;
       function toggleCollapse() {
@@ -479,9 +897,14 @@ export default {
         if (collapseHintEl) {
           collapseHintEl.style.display = isCollapsed ? "inline" : "none";
         }
+        if (isCollapsed) {
+          block.classList.remove("is-overflow-collapsed");
+          const mask = block.querySelector(".edgeever-code-fold-mask");
+          if (mask) mask.style.display = "none";
+        }
       }
 
-      // 折叠/展开按钮
+      // 3) 折叠/展开按钮
       if (settings.showCollapseButton) {
         collapseBtn = document.createElement("button");
         collapseBtn.className = "edgeever-code-tool-btn edgeever-code-collapse-btn";
@@ -509,7 +932,7 @@ export default {
         right.appendChild(collapseBtn);
       }
 
-      // 右侧复制按钮（全面对接桌面端与网页端剪贴板）
+      // 4) 复制按钮（全面对接桌面端与网页端剪贴板）
       if (settings.showCopyButton) {
         const copyBtn = document.createElement("button");
         copyBtn.className = "edgeever-code-tool-btn edgeever-code-copy-btn";
@@ -525,7 +948,7 @@ export default {
         copyBtn.onclick = async (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const textToCopy = sourceEl.innerText || sourceEl.textContent || "";
+          const textToCopy = block.dataset.originalRawCode || sourceEl.innerText || sourceEl.textContent || "";
           const ok = await copyCodeToClipboard(textToCopy, block);
           if (ok) {
             copyBtn.classList.add("copied");
@@ -563,13 +986,53 @@ export default {
       }
 
       // 5. 语法着色（核心逻辑）：
-      // 只要语言是 ABAP 或用户手动指定了语言，且当前非编辑输入聚焦态，执行高亮
       const isEditing = document.activeElement === sourceEl || sourceEl.contains(document.activeElement);
-      if (!isEditing) {
+      if (!isEditing && !block.classList.contains("has-search-open")) {
         const langKey = GRAMMARS[detectedLang] ? detectedLang : detectedLang === "abap" ? "abap" : null;
         if (langKey) {
           sourceEl.innerHTML = highlightCode(rawText, langKey);
         }
+      }
+
+      // 6. 超长代码块平滑渐变遮罩与自动折叠
+      let foldMask = block.querySelector(".edgeever-code-fold-mask");
+      if (!foldMask) {
+        foldMask = document.createElement("div");
+        foldMask.className = "edgeever-code-fold-mask";
+        foldMask.setAttribute("contenteditable", "false");
+        foldMask.innerHTML = `
+          <button type="button" class="edgeever-code-fold-expand-btn">
+            展开余下代码 (共 ${linesCount} 行) ▼
+          </button>
+        `;
+        block.appendChild(foldMask);
+
+        foldMask.querySelector(".edgeever-code-fold-expand-btn").onclick = (e) => {
+          e.stopPropagation();
+          block.classList.remove("is-overflow-collapsed");
+          block.dataset.userExpanded = "true";
+          foldMask.style.display = "none";
+        };
+      }
+
+      if (
+        settings.autoFoldTallCode &&
+        !block.classList.contains("is-collapsed") &&
+        block.dataset.userExpanded !== "true"
+      ) {
+        const isTall = linesCount >= 22 || sourceEl.scrollHeight > settings.maxCodeHeight + 30;
+        if (isTall) {
+          block.classList.add("is-overflow-collapsed");
+          foldMask.style.display = "flex";
+          const expandBtn = foldMask.querySelector(".edgeever-code-fold-expand-btn");
+          if (expandBtn) expandBtn.textContent = `展开余下代码 (共 ${linesCount} 行) ▼`;
+        } else {
+          block.classList.remove("is-overflow-collapsed");
+          foldMask.style.display = "none";
+        }
+      } else {
+        block.classList.remove("is-overflow-collapsed");
+        foldMask.style.display = "none";
       }
 
       block.dataset.codeProProcessed = "true";
@@ -586,8 +1049,10 @@ export default {
       document.querySelectorAll(".edgeever-code-pro-block").forEach((el) => {
         delete el.dataset.codeProProcessed;
         el.querySelector(".edgeever-code-pro-toolbar")?.remove();
+        el.querySelector(".edgeever-code-search-bar")?.remove();
         el.querySelector(".edgeever-code-line-numbers")?.remove();
-        el.classList.remove("has-line-numbers");
+        el.querySelector(".edgeever-code-fold-mask")?.remove();
+        el.classList.remove("has-line-numbers", "is-overflow-collapsed", "has-search-open");
       });
       processAllCodeBlocks();
     }
@@ -626,13 +1091,19 @@ export default {
     return () => {
       observer.disconnect();
       document.querySelectorAll(".edgeever-code-pro-toolbar").forEach((b) => b.remove());
+      document.querySelectorAll(".edgeever-code-search-bar").forEach((b) => b.remove());
       document.querySelectorAll(".edgeever-code-line-numbers").forEach((g) => g.remove());
+      document.querySelectorAll(".edgeever-code-fold-mask").forEach((m) => m.remove());
       document.querySelectorAll(".edgeever-code-pro-block").forEach((p) => {
         delete p.dataset.codeProProcessed;
+        delete p.dataset.userExpanded;
+        delete p.dataset.originalRawCode;
         p.classList.remove(
           "edgeever-code-pro-block",
           "has-line-numbers",
           "is-collapsed",
+          "is-overflow-collapsed",
+          "has-search-open",
           "edgeever-theme-one-dark",
           "edgeever-theme-github-dark",
           "edgeever-theme-tokyo-night",
