@@ -2,7 +2,7 @@
   "type": "plugin",
   "id": "org.edgeever.plugins.code-pro",
   "name": "Code Pro: Syntax Highlight & Beautifier",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "apiVersion": "2",
   "settingsUi": "host",
   "description": "Professional code block beautification with standard syntax highlighting, full SAP ABAP support, Mac-style header bar, language badge, line numbers, and quick copy.",
@@ -19,37 +19,37 @@
   "settings": {
     "fields": [
       {
-        "key": "showMacDots",
+        "key": "show_mac_dots",
         "type": "boolean",
         "label": "显示 Mac 风格三色圆点装饰",
         "default": true
       },
       {
-        "key": "showLanguageBadge",
+        "key": "show_language_badge",
         "type": "boolean",
         "label": "显示代码语言指示徽标",
         "default": true
       },
       {
-        "key": "showCopyButton",
+        "key": "show_copy_button",
         "type": "boolean",
         "label": "显示一键复制代码按钮",
         "default": true
       },
       {
-        "key": "showLineNumbers",
+        "key": "show_line_numbers",
         "type": "boolean",
         "label": "显示代码行号",
         "default": true
       },
       {
-        "key": "autoDetectAbap",
+        "key": "auto_detect_abap",
         "type": "boolean",
         "label": "自动嗅探并高亮未标注语言的 ABAP 代码",
         "default": true
       },
       {
-        "key": "codeTheme",
+        "key": "code_theme",
         "type": "select",
         "label": "代码高亮配色方案",
         "default": "one-dark",

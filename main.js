@@ -239,12 +239,12 @@ export default {
     // 读取持久化设置
     const loadSettings = async () => {
       try {
-        const dots = await context.settings.get("showMacDots");
-        const lang = await context.settings.get("showLanguageBadge");
-        const copy = await context.settings.get("showCopyButton");
-        const lines = await context.settings.get("showLineNumbers");
-        const abap = await context.settings.get("autoDetectAbap");
-        const theme = await context.settings.get("codeTheme");
+        const dots = await context.settings.get("show_mac_dots");
+        const lang = await context.settings.get("show_language_badge");
+        const copy = await context.settings.get("show_copy_button");
+        const lines = await context.settings.get("show_line_numbers");
+        const abap = await context.settings.get("auto_detect_abap");
+        const theme = await context.settings.get("code_theme");
 
         if (dots !== null) settings.showMacDots = dots;
         if (lang !== null) settings.showLanguageBadge = lang;
