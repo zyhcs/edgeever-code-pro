@@ -1,15 +1,23 @@
 /* ==========================================================================
    EdgeEver Code Pro - 现代代码块设计系统与语法高亮
+   原生深度适配 EdgeEver 编辑器与全语法高亮
    ========================================================================== */
 
-/* 1. 代码块容器整体卡片化 */
+/* 1. 隐藏 EdgeEver 默认的右上角灰色复制按钮（由 Code Pro 优雅工具栏替代） */
+.edgeever-code-block.edgeever-code-pro-block > .edgeever-code-copy-button,
+.edgeever-code-block.edgeever-code-pro-block .edgeever-code-copy-button {
+  display: none !important;
+}
+
+/* 2. 代码块容器整体卡片化重塑 */
+.edgeever-code-block.edgeever-code-pro-block,
 pre.edgeever-code-pro-block {
   position: relative !important;
   margin: 1.25em 0 !important;
   padding: 0 !important;
   border-radius: 10px !important;
   border: 1px solid var(--code-border, rgba(148, 163, 184, 0.22)) !important;
-  background-color: var(--code-bg, #1e1e24) !important;
+  background-color: var(--code-bg, #21252b) !important;
   box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.12), 0 2px 6px -1px rgba(0, 0, 0, 0.08) !important;
   overflow: hidden !important;
   font-family: ui-monospace, "JetBrains Mono", "Fira Code", SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
@@ -17,17 +25,18 @@ pre.edgeever-code-pro-block {
   line-height: 1.62 !important;
 }
 
-/* 2. 顶部 Mac 风格工具栏 */
+/* 3. 顶部 Mac 风格工具栏 */
 .edgeever-code-pro-toolbar {
   height: 38px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 14px;
-  background: var(--toolbar-bg, rgba(24, 24, 30, 0.95));
-  border-bottom: 1px solid var(--toolbar-border, rgba(255, 255, 255, 0.08));
+  background: var(--toolbar-bg, rgba(27, 29, 35, 0.95));
+  border-bottom: 1px solid var(--toolbar-border, rgba(255, 255, 255, 0.06));
   user-select: none;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  z-index: 2;
 }
 
 .edgeever-code-pro-left {
@@ -96,50 +105,60 @@ pre.edgeever-code-pro-block {
   background: rgba(52, 211, 153, 0.12) !important;
 }
 
-/* 3. 代码正文内容滚动区域 */
-.edgeever-code-pro-content {
-  display: flex;
-  overflow-x: auto;
-  padding: 12px 0 16px 0;
-  tab-size: 2;
-}
-
-/* 4. 行号区域（复制时不随内容复制） */
-.edgeever-code-line-numbers {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  padding: 0 14px 0 16px;
-  border-right: 1px solid var(--gutter-border, rgba(255, 255, 255, 0.08));
-  color: var(--gutter-color, #52525b);
-  user-select: none;
-  font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
-}
-
-.edgeever-code-line-number {
-  display: block;
-}
-
-/* 代码容器本体 */
+/* 4. 代码正文源区域重构（兼容 EdgeEver 原生 NodeViewContent 与标准 pre） */
+.edgeever-code-block.edgeever-code-pro-block .edgeever-code-source,
 pre.edgeever-code-pro-block code {
-  flex: 1;
-  display: block;
-  padding: 0 18px !important;
-  overflow-x: auto;
-  background: transparent !important;
+  display: block !important;
+  margin: 0 !important;
+  padding: 1rem 1.25rem !important;
   border: none !important;
-  color: var(--code-fg, #abb2bf);
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--code-fg, #abb2bf) !important;
+  box-shadow: none !important;
   font-family: inherit !important;
   font-size: inherit !important;
   line-height: inherit !important;
+  overflow-x: auto !important;
   white-space: pre !important;
+  outline: none !important;
+}
+
+/* 5. 行号槽（不占用选区，不干扰复制） */
+.edgeever-code-block.edgeever-code-pro-block.has-line-numbers .edgeever-code-source,
+pre.edgeever-code-pro-block.has-line-numbers code {
+  padding-left: 3.8rem !important;
+}
+
+.edgeever-code-line-numbers {
+  position: absolute !important;
+  left: 0 !important;
+  top: 38px !important;
+  bottom: 0 !important;
+  width: 3.2rem !important;
+  padding-top: 1rem !important;
+  text-align: right !important;
+  padding-right: 0.75rem !important;
+  color: var(--gutter-color, #5c6370) !important;
+  border-right: 1px solid var(--gutter-border, rgba(255, 255, 255, 0.08)) !important;
+  user-select: none !important;
+  pointer-events: none !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  overflow: hidden !important;
+  z-index: 1 !important;
+}
+
+.edgeever-code-line-number {
+  display: block !important;
+  height: 1.62em !important;
+  line-height: 1.62em !important;
+  opacity: 0.65 !important;
 }
 
 /* ==========================================================================
-   高亮配色方案：One Dark Pro (默认)
+   主题配色 1：One Dark Pro (默认经典深色)
    ========================================================================== */
 .edgeever-theme-one-dark {
   --code-bg: #21252b;
@@ -149,35 +168,52 @@ pre.edgeever-code-pro-block code {
   --code-border: rgba(255, 255, 255, 0.08);
   --gutter-color: #5c6370;
   --gutter-border: rgba(255, 255, 255, 0.06);
+  --lang-color: #94a3b8;
+  --lang-bg: rgba(255, 255, 255, 0.08);
+  --lang-border: rgba(255, 255, 255, 0.06);
 }
 
 .edgeever-theme-one-dark .token.keyword,
-.edgeever-theme-one-dark .token.abap-keyword { color: #c678dd !important; font-weight: 600; }
+.edgeever-theme-one-dark .token.abap-keyword,
+.edgeever-theme-one-dark .hljs-keyword,
+.edgeever-theme-one-dark .hljs-doctag { color: #c678dd !important; font-weight: 600; }
 
 .edgeever-theme-one-dark .token.function,
-.edgeever-theme-one-dark .token.abap-function { color: #61afef !important; }
+.edgeever-theme-one-dark .token.abap-function,
+.edgeever-theme-one-dark .hljs-built_in,
+.edgeever-theme-one-dark .hljs-title.function_ { color: #61afef !important; }
 
 .edgeever-theme-one-dark .token.string,
-.edgeever-theme-one-dark .token.abap-string { color: #98c379 !important; }
+.edgeever-theme-one-dark .token.abap-string,
+.edgeever-theme-one-dark .hljs-string,
+.edgeever-theme-one-dark .hljs-meta .hljs-string { color: #98c379 !important; }
 
 .edgeever-theme-one-dark .token.comment,
-.edgeever-theme-one-dark .token.abap-comment { color: #5c6370 !important; font-style: italic; }
+.edgeever-theme-one-dark .token.abap-comment,
+.edgeever-theme-one-dark .hljs-comment { color: #5c6370 !important; font-style: italic; }
 
 .edgeever-theme-one-dark .token.number,
-.edgeever-theme-one-dark .token.abap-number { color: #d19a66 !important; }
+.edgeever-theme-one-dark .token.abap-number,
+.edgeever-theme-one-dark .hljs-number,
+.edgeever-theme-one-dark .hljs-literal { color: #d19a66 !important; }
 
 .edgeever-theme-one-dark .token.class-name,
 .edgeever-theme-one-dark .token.type,
-.edgeever-theme-one-dark .token.abap-type { color: #e5c07b !important; }
+.edgeever-theme-one-dark .token.abap-type,
+.edgeever-theme-one-dark .hljs-type,
+.edgeever-theme-one-dark .hljs-title.class_ { color: #e5c07b !important; }
 
-.edgeever-theme-one-dark .token.abap-system-var { color: #e06c75 !important; font-weight: 600; }
+.edgeever-theme-one-dark .token.abap-system-var,
+.edgeever-theme-one-dark .hljs-variable,
+.edgeever-theme-one-dark .hljs-symbol { color: #e06c75 !important; font-weight: 600; }
 
-.edgeever-theme-one-dark .token.operator { color: #56b6c2 !important; }
+.edgeever-theme-one-dark .token.operator,
+.edgeever-theme-one-dark .hljs-operator { color: #56b6c2 !important; }
 .edgeever-theme-one-dark .token.punctuation { color: #abb2bf; }
 .edgeever-theme-one-dark .token.boolean { color: #d19a66; font-weight: 600; }
 
 /* ==========================================================================
-   高亮配色方案：GitHub Dark
+   主题配色 2：GitHub Dark (优雅沉浸)
    ========================================================================== */
 .edgeever-theme-github-dark {
   --code-bg: #0d1117;
@@ -187,24 +223,46 @@ pre.edgeever-code-pro-block code {
   --code-border: #30363d;
   --gutter-color: #484f58;
   --gutter-border: #21262d;
+  --lang-color: #8b949e;
+  --lang-bg: rgba(255, 255, 255, 0.06);
+  --lang-border: rgba(255, 255, 255, 0.08);
 }
 
 .edgeever-theme-github-dark .token.keyword,
-.edgeever-theme-github-dark .token.abap-keyword { color: #ff7b72 !important; font-weight: 600; }
+.edgeever-theme-github-dark .token.abap-keyword,
+.edgeever-theme-github-dark .hljs-keyword,
+.edgeever-theme-github-dark .hljs-doctag { color: #ff7b72 !important; font-weight: 600; }
+
 .edgeever-theme-github-dark .token.function,
-.edgeever-theme-github-dark .token.abap-function { color: #d2a8ff !important; }
+.edgeever-theme-github-dark .token.abap-function,
+.edgeever-theme-github-dark .hljs-built_in,
+.edgeever-theme-github-dark .hljs-title.function_ { color: #d2a8ff !important; }
+
 .edgeever-theme-github-dark .token.string,
-.edgeever-theme-github-dark .token.abap-string { color: #a5d6ff !important; }
+.edgeever-theme-github-dark .token.abap-string,
+.edgeever-theme-github-dark .hljs-string,
+.edgeever-theme-github-dark .hljs-meta .hljs-string { color: #a5d6ff !important; }
+
 .edgeever-theme-github-dark .token.comment,
-.edgeever-theme-github-dark .token.abap-comment { color: #8b949e !important; font-style: italic; }
+.edgeever-theme-github-dark .token.abap-comment,
+.edgeever-theme-github-dark .hljs-comment { color: #8b949e !important; font-style: italic; }
+
 .edgeever-theme-github-dark .token.number,
-.edgeever-theme-github-dark .token.abap-number { color: #79c0ff !important; }
-.edgeever-theme-github-dark .token.abap-system-var { color: #ffa657 !important; font-weight: 600; }
+.edgeever-theme-github-dark .token.abap-number,
+.edgeever-theme-github-dark .hljs-number,
+.edgeever-theme-github-dark .hljs-literal { color: #79c0ff !important; }
+
+.edgeever-theme-github-dark .token.abap-system-var,
+.edgeever-theme-github-dark .hljs-variable,
+.edgeever-theme-github-dark .hljs-symbol { color: #ffa657 !important; font-weight: 600; }
+
 .edgeever-theme-github-dark .token.type,
-.edgeever-theme-github-dark .token.abap-type { color: #7ee787 !important; }
+.edgeever-theme-github-dark .token.abap-type,
+.edgeever-theme-github-dark .hljs-type,
+.edgeever-theme-github-dark .hljs-title.class_ { color: #7ee787 !important; }
 
 /* ==========================================================================
-   高亮配色方案：Tokyo Night
+   主题配色 3：Tokyo Night (东京之夜)
    ========================================================================== */
 .edgeever-theme-tokyo-night {
   --code-bg: #1a1b26;
@@ -214,24 +272,46 @@ pre.edgeever-code-pro-block code {
   --code-border: #24283b;
   --gutter-color: #3b4261;
   --gutter-border: #24283b;
+  --lang-color: #7aa2f7;
+  --lang-bg: rgba(122, 162, 247, 0.1);
+  --lang-border: rgba(122, 162, 247, 0.2);
 }
 
 .edgeever-theme-tokyo-night .token.keyword,
-.edgeever-theme-tokyo-night .token.abap-keyword { color: #bb9af7 !important; font-weight: 600; }
+.edgeever-theme-tokyo-night .token.abap-keyword,
+.edgeever-theme-tokyo-night .hljs-keyword,
+.edgeever-theme-tokyo-night .hljs-doctag { color: #bb9af7 !important; font-weight: 600; }
+
 .edgeever-theme-tokyo-night .token.function,
-.edgeever-theme-tokyo-night .token.abap-function { color: #7aa2f7 !important; }
+.edgeever-theme-tokyo-night .token.abap-function,
+.edgeever-theme-tokyo-night .hljs-built_in,
+.edgeever-theme-tokyo-night .hljs-title.function_ { color: #7aa2f7 !important; }
+
 .edgeever-theme-tokyo-night .token.string,
-.edgeever-theme-tokyo-night .token.abap-string { color: #9ece6a !important; }
+.edgeever-theme-tokyo-night .token.abap-string,
+.edgeever-theme-tokyo-night .hljs-string,
+.edgeever-theme-tokyo-night .hljs-meta .hljs-string { color: #9ece6a !important; }
+
 .edgeever-theme-tokyo-night .token.comment,
-.edgeever-theme-tokyo-night .token.abap-comment { color: #565f89 !important; font-style: italic; }
+.edgeever-theme-tokyo-night .token.abap-comment,
+.edgeever-theme-tokyo-night .hljs-comment { color: #565f89 !important; font-style: italic; }
+
 .edgeever-theme-tokyo-night .token.number,
-.edgeever-theme-tokyo-night .token.abap-number { color: #ff9e64 !important; }
-.edgeever-theme-tokyo-night .token.abap-system-var { color: #f7768e !important; font-weight: 600; }
+.edgeever-theme-tokyo-night .token.abap-number,
+.edgeever-theme-tokyo-night .hljs-number,
+.edgeever-theme-tokyo-night .hljs-literal { color: #ff9e64 !important; }
+
+.edgeever-theme-tokyo-night .token.abap-system-var,
+.edgeever-theme-tokyo-night .hljs-variable,
+.edgeever-theme-tokyo-night .hljs-symbol { color: #f7768e !important; font-weight: 600; }
+
 .edgeever-theme-tokyo-night .token.type,
-.edgeever-theme-tokyo-night .token.abap-type { color: #2ac3de !important; }
+.edgeever-theme-tokyo-night .token.abap-type,
+.edgeever-theme-tokyo-night .hljs-type,
+.edgeever-theme-tokyo-night .hljs-title.class_ { color: #2ac3de !important; }
 
 /* ==========================================================================
-   高亮配色方案：GitHub Light (浅色日间)
+   主题配色 4：GitHub Light (清新浅色)
    ========================================================================== */
 .edgeever-theme-github-light {
   --code-bg: #f6f8fa;
@@ -243,6 +323,7 @@ pre.edgeever-code-pro-block code {
   --gutter-border: #e1e4e8;
   --lang-color: #57606a;
   --lang-bg: rgba(0, 0, 0, 0.05);
+  --lang-border: rgba(0, 0, 0, 0.08);
 }
 
 .edgeever-theme-github-light .edgeever-code-copy-btn {
@@ -253,16 +334,36 @@ pre.edgeever-code-pro-block code {
   color: #24292f;
   background: rgba(0, 0, 0, 0.08);
 }
+
 .edgeever-theme-github-light .token.keyword,
-.edgeever-theme-github-light .token.abap-keyword { color: #cf222e !important; font-weight: 600; }
+.edgeever-theme-github-light .token.abap-keyword,
+.edgeever-theme-github-light .hljs-keyword,
+.edgeever-theme-github-light .hljs-doctag { color: #cf222e !important; font-weight: 600; }
+
 .edgeever-theme-github-light .token.function,
-.edgeever-theme-github-light .token.abap-function { color: #8250df !important; }
+.edgeever-theme-github-light .token.abap-function,
+.edgeever-theme-github-light .hljs-built_in,
+.edgeever-theme-github-light .hljs-title.function_ { color: #8250df !important; }
+
 .edgeever-theme-github-light .token.string,
-.edgeever-theme-github-light .token.abap-string { color: #0a3069 !important; }
+.edgeever-theme-github-light .token.abap-string,
+.edgeever-theme-github-light .hljs-string,
+.edgeever-theme-github-light .hljs-meta .hljs-string { color: #0a3069 !important; }
+
 .edgeever-theme-github-light .token.comment,
-.edgeever-theme-github-light .token.abap-comment { color: #6e7781 !important; font-style: italic; }
+.edgeever-theme-github-light .token.abap-comment,
+.edgeever-theme-github-light .hljs-comment { color: #6e7781 !important; font-style: italic; }
+
 .edgeever-theme-github-light .token.number,
-.edgeever-theme-github-light .token.abap-number { color: #0550ae !important; }
-.edgeever-theme-github-light .token.abap-system-var { color: #953800 !important; font-weight: 600; }
+.edgeever-theme-github-light .token.abap-number,
+.edgeever-theme-github-light .hljs-number,
+.edgeever-theme-github-light .hljs-literal { color: #0550ae !important; }
+
+.edgeever-theme-github-light .token.abap-system-var,
+.edgeever-theme-github-light .hljs-variable,
+.edgeever-theme-github-light .hljs-symbol { color: #953800 !important; font-weight: 600; }
+
 .edgeever-theme-github-light .token.type,
-.edgeever-theme-github-light .token.abap-type { color: #116329 !important; }
+.edgeever-theme-github-light .token.abap-type,
+.edgeever-theme-github-light .hljs-type,
+.edgeever-theme-github-light .hljs-title.class_ { color: #116329 !important; }

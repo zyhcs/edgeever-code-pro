@@ -1,6 +1,7 @@
 /**
  * EdgeEver Code Pro Plugin
  * 专业级语法高亮引擎与代码块美化器
+ * 原生深度适配 EdgeEver 编辑器与全语法高亮
  */
 
 // ==================== 1. 轻量化标准 Prism 语法引擎核心 ====================
@@ -32,12 +33,11 @@ const Prism = {
         const pattern = patternObj.pattern || patternObj;
         const inside = patternObj.inside;
         const lookbehind = Boolean(patternObj.lookbehind);
-        const lookbehindLength = 0;
         const alias = patternObj.alias;
 
         for (let i = 0; i < tokenList.length; i++) {
           const str = tokenList[i];
-          if (tokenList.length > 20000) break; // 保护
+          if (tokenList.length > 20000) break;
           if (typeof str !== "string") continue;
 
           pattern.lastIndex = 0;
@@ -49,166 +49,140 @@ const Prism = {
           let content = matchStr;
 
           if (lookbehind && match[1]) {
-            const lb = match[1].length;
-            from += lb;
-            content = content.slice(lb);
+            from += match[1].length;
+            content = matchStr.slice(match[1].length);
           }
 
           const to = from + content.length;
           const before = str.slice(0, from);
           const after = str.slice(to);
 
-          const args = [i, 1];
-          if (before) args.push(before);
+          const tokenArgs = [i, 1];
+          if (before) tokenArgs.push(before);
 
-          const wrapped = new Prism.Token(
-            token,
-            inside ? Prism.tokenize(content, inside) : content,
-            alias
-          );
-          args.push(wrapped);
-          if (after) args.push(after);
+          const wrapped = inside
+            ? new Prism.Token(token, Prism.tokenize(content, inside), alias)
+            : new Prism.Token(token, content, alias);
+          tokenArgs.push(wrapped);
+          if (after) tokenArgs.push(after);
 
-          tokenList.splice.apply(tokenList, args);
-          i += args.length - 2;
+          tokenList.splice.apply(tokenList, tokenArgs);
+          i += tokenArgs.length - 2;
         }
       }
     }
     return tokenList;
   },
-  encode: function (tokens) {
-    if (typeof tokens === "string") {
-      return tokens
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-    }
-    if (Array.isArray(tokens)) {
-      return tokens.map(Prism.encode).join("");
-    }
-    const content = Prism.encode(tokens.content);
-    const classes = ["token", tokens.type];
-    if (tokens.alias) {
-      classes.push(tokens.alias);
-    }
-    return `<span class="${classes.join(" ")}">${content}</span>`;
-  },
   highlight: function (text, grammar) {
-    if (!grammar) return Prism.encode(text);
     const tokens = Prism.tokenize(text, grammar);
-    return Prism.encode(tokens);
+    return Prism.Token.stringify(tokens);
   },
 };
 
-// ==================== 2. 官方标准语言语法定义库 ====================
+Prism.Token.stringify = function (o) {
+  if (typeof o === "string") {
+    return o.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  if (Array.isArray(o)) {
+    return o.map(Prism.Token.stringify).join("");
+  }
+  const classes = ["token", o.type];
+  if (o.alias) {
+    classes.push(o.alias);
+  }
+  return `<span class="${classes.join(" ")}">${Prism.Token.stringify(o.content)}</span>`;
+};
 
-// 2.1 完整 SAP ABAP 语法定义
+// ==================== 2. SAP ABAP 语法定义 (标准扩展) ====================
 Prism.languages.abap = {
-  "abap-comment": [
-    { pattern: /^\*.*$/m, greedy: true },
-    { pattern: /".*$/m, greedy: true },
+  comment: [
+    { pattern: /(^\*|\n\*).*$/m, greedy: true, alias: "abap-comment" },
+    { pattern: /".*$/, greedy: true, alias: "abap-comment" },
   ],
-  "abap-string": {
-    pattern: /'(?:''|[^'\r\n])*'|`[^`\r\n]*`/,
-    greedy: true,
-  },
+  string: [
+    { pattern: /'(?:''|[^'\r\n])*'/g, greedy: true, alias: "abap-string" },
+    { pattern: /`(?:``|[^`\r\n])*`/g, greedy: true, alias: "abap-string" },
+    { pattern: /\|(?:\\\||[^\|\r\n])*\|/g, greedy: true, alias: "abap-string" },
+  ],
   "abap-system-var": {
-    pattern: /\bSY-[A-Z0-9_]+\b/i,
-    alias: "symbol",
+    pattern: /\b(?:SY|SYST)-[A-Z0-9_]+\b/i,
+    alias: "abap-system-var",
   },
-  "abap-keyword": {
-    pattern: /\b(?:ADD|ADD-CORRESPONDING|ADJACENT|AFTER|ALIASES|ALL|ANALYZER|AND|ANY|APPEND|APPENDING|AS|ASCENDING|ASSIGN|ASSIGNED|ASSIGNING|AT|AUTHORITY-CHECK|BACK|BEGIN|BINARY|BLANK|BLOCK|BOUND|BREAK|BREAK-POINT|BUFFER|BY|CALL|CASE|CATCH|CEIL|CENTERED|CHAIN|CHECK|CLASS|CLASS-DATA|CLASS-METHODS|CLEAR|CLIENT|CLOSE|CN|CO|COLLECT|COMMUNICATION|COMPARING|COMPONENT|COMPONENTS|COMPUTE|CONCATENATE|CONDENSE|CONSTANTS|CONTEXT|CONTEXTS|CONTINUE|CONTROLS|CONVERT|COPY|CORRESPONDING|COUNT|CP|CREATE|CS|CURRENCY|CUSTOMER-FUNCTION|DATA|DATABASE|DATAINFO|DATATYPE|DATE|DECIMALS|DEFAULT|DEFINE|DEFINITION|DELETE|DELETING|DEMAND|DESCENDING|DESCRIBE|DESTINATION|DETAIL|DIALOG|DIRECTORY|DIVIDE|DIVIDE-CORRESPONDING|DO|DUPLICATES|DURING|DYNAMIC|EDIT|EDITOR-CALL|ELSE|ELSEIF|END|END-OF-DEFINITION|END-OF-PAGE|END-OF-SELECTION|ENDAT|ENDCASE|ENDCATCH|ENDCHAIN|ENDCLASS|ENDDO|ENDFORM|ENDFUNCTION|ENDIF|ENDINTERFACE|ENDLOOP|ENDMETHOD|ENDMODULE|ENDON|ENDPROVIDE|ENDSELECT|ENDTRY|ENDWHILE|ENTRY|EQ|EQUAL|ERRORMESSAGE|EVENTS|EXCEPT|EXCEPTION|EXCEPTIONS|EXEC|EXECUTE|EXIT|EXIT-COMMAND|EXPAND|EXPORT|EXPORTING|EXTRACT|FETCH|FIELD|FIELD-GROUPS|FIELD-SYMBOLS|FIELDS|FIND|FIRST|FLOOR|FOR|FORM|FORMAT|FORWARD|FREE|FROM|FUNCTION|FUNCTION-POOL|GE|GENERATE|GET|GIVING|GREATER|GROUP|HANDLER|HAVING|HEADER|HELP-REQUEST|HIDE|HIGH|HOLD|ID|IDENTIFICATION|IF|IGNORE|IMPLEMENTATION|IMPORT|IMPORTING|IN|INCLUDE|INCLUDING|INCREMENT|INDEX|INDEX-LINE|INFOS|INITIAL|INITIALIZATION|INNER|INPUT|INSERT|INSTANCE|INSTANCES|INTERFACE|INTERFACES|INTERVALS|INTO|INVERSE|IS|JOIN|KEY|LANGUAGE|LAST|LE|LEADING|LEAVE|LEFT|LEFT-JUSTIFIED|LEQ|LESS|LIKE|LINE|LINE-COUNT|LINE-SELECTION|LINE-SIZE|LINES|LIST-PROCESSING|LOAD|LOAD-OF-PROGRAM|LOCAL|LOCALE|LOG-POINT|LOG10|LOOP|LOW|LOWER|M|MATCH|MATCHCODE|MAX|MAXIMUM|MEDIUM|MEMORY|MESSAGE|MESSAGE-ID|MESSAGES|METHOD|METHODS|MIN|MINIMUM|MOD|MODE|MODIF|MODIFIER|MODIFY|MODULE|MOVE|MOVE-CORRESPONDING|MULTIPLY|MULTIPLY-CORRESPONDING|NEW|NEW-LINE|NEW-PAGE|NEXT|NO|NO-EXTENSION|NO-GAP|NO-GAPS|NO-GROUPING|NO-HEADING|NO-SCROLLING|NO-SIGN|NO-TITLE|NO-TOP-OF-PAGE|NO-ZERO|NODES|NON-UNIQUE|NOT|NP|NS|NULL|O|OBJECT|OBJECTS|OBLIGATORY|OCCURRENCE|OCCURRENCES|OCCURS|OF|OFF|OFFSET|ON|OPEN|OPTION|OPTIONAL|OPTIONS|OR|ORDER|OTHERS|OUTER|OUTPUT|OUTPUT-LENGTH|OVERLAY|PACK|PACKAGE|PAGE|PAGES|PARAMETER|PARAMETERS|PART|PERFORM|PERFORMING|PF-STATUS|PLACES|POOL|POSITION|PRINT|PRINT-CONTROL|PRIVATE|PROCESS|PROGRAM|PROPERTY|PROTECTED|PROVIDE|PUBLIC|PUSH|PUT|RADIOBUTTON|RAISE|RAISING|RANGE|RANGES|READ|RECEIVE|RECEIVING|REDIFINITION|REFERENCE|REFRESH|REGEX|REJECT|REPLACE|REPLACEMENT|REPORT|RESERVE|RESET|RESOLUTION|RESPECTING|RESPONSIBLE|RESULT|RESULTS|RETAIN|RETURN|RETURNING|RIGHT|RIGHT-JUSTIFIED|ROLLBACK|ROUND|ROWS|RUN|SCAN|SCREEN|SCROLL|SCROLL-BOUNDARY|SCROLLING|SEARCH|SECTION|SELECT|SELECTION|SELECTION-SCREEN|SELECTION-SET|SELECTION-SETS|SELECTION-TABLE|SELECTIONS|SEND|SEPARATE|SEPARATED|SET|SHARED|SHIFT|SIGN|SINGLE|SIZE|SKIP|SKIPPING|SORT|SORTABLE|SORTED|SPACE|SPECIFIED|SPLIT|STANDARD|STAMP|START-OF-SELECTION|STARTING|STATICS|STATUS|STOP|STRUCTURE|STRUCTURES|SUBKEY|SUBMATCHES|SUBMIT|SUBTRACT|SUBTRACT-CORRESPONDING|SUM|SUMMARY|SUPPRESS|SYMBOL|SYNTAX-CHECK|TABLE|TABLES|TABSTRIP|TIME|TITLE|TITLEBAR|TO|TOP-OF-PAGE|TRAILING|TRANSACTION|TRANSFER|TRANSLATE|TRUNC|TRUNCATE|TRUNCATION|TRY|TYPE|TYPE-POOL|TYPE-POOLS|TYPES|ULINE|UNDER|UNIQUE|UNIT|UNPACK|UNTIL|UP|UPDATE|UPPER|USER-COMMAND|USING|VALUE|VALUES|VIA|WAIT|WHEN|WHERE|WHILE|WINDOW|WITH|WITH-HEADING|WITHOUT|WORD|WORK|WRITE|ZONE)\b/i,
-    alias: "keyword",
+  keyword: {
+    pattern:
+      /\b(?:REPORT|PROGRAM|FUNCTION-POOL|CLASS-POOL|INTERFACE-POOL|TYPE-POOL|TABLES|DATA|TYPES|CONSTANTS|STATICS|PARAMETERS|SELECT-OPTIONS|FIELD-SYMBOLS|CLASS|ENDCLASS|INTERFACE|ENDINTERFACE|METHOD|ENDMETHOD|MODULE|ENDMODULE|FORM|ENDFORM|FUNCTION|ENDFUNCTION|DO|ENDDO|WHILE|ENDWHILE|LOOP|ENDLOOP|AT|ENDAT|IF|ELSEIF|ELSE|ENDIF|CASE|WHEN|ENDCASE|TRY|CATCH|CLEANUP|ENDTRY|CHECK|EXIT|CONTINUE|RETURN|REJECT|STOP|CALL|PERFORM|SUBMIT|LEAVE|RAISE|MESSAGE|SELECT|SINGLE|FROM|INTO|CORRESPONDING|FIELDS|WHERE|GROUP|BY|HAVING|ORDER|APPENDING|INSERT|UPDATE|MODIFY|DELETE|COMMIT|WORK|ROLLBACK|OPEN|FETCH|CLOSE|READ|TABLE|APPEND|SORT|ASSIGN|UNASSIGN|CLEAR|FREE|MOVE|CONCATENATE|SPLIT|CONDENSE|TRANSLATE|REPLACE|SEARCH|SHIFT|DESCRIBE|COMPUTE|ADD|SUBTRACT|MULTIPLY|DIVIDE|TYPE|LIKE|REF|TO|VALUE|INITIAL|OPTIONAL|DEFAULT|STANDARD|SORTED|HASHED|INDEX|KEY|WITH|TRANSPORTING|NO|FIELDS|UP|ROWS|WHERE|EQ|NE|LT|LE|GT|GE|AND|OR|NOT|BETWEEN|IN|LIKE|IS|ASSIGNED|BOUND|INITIAL|EXPORTING|IMPORTING|CHANGING|RECEIVING|EXCEPTIONS|OTHERS|USING|TABLES|DEFINING|DEFINITION|IMPLEMENTATION|PUBLIC|PROTECTED|PRIVATE|ABSTRACT|FINAL|FOR|TESTING|INHERITING|INTERFACES|EVENTS|ALIASES|CREATE|OBJECT|SET|GET|HANDLER|ACTIVATION|STATUS|TITLEBAR)\b/i,
+    alias: "abap-keyword",
   },
-  "abap-type": {
-    pattern: /\b(?:C|N|D|T|I|INT1|INT2|INT4|INT8|P|DECFLOAT16|DECFLOAT34|F|STRING|X|XSTRING|BAPIPAREX|BAPIRET2)\b/i,
-    alias: "type",
+  function: {
+    pattern: /\b(?:CONV|COND|SWITCH|CAST|EXACT|REDUCE|FILTER|CORRESPONDING|LINE_EXISTS|LINE_INDEX|VALUE)\b|\b[A-Za-z0-9_]+(?=\s*\()/i,
+    alias: "abap-function",
   },
-  "abap-number": /\b\d+(?:\.\d+)?\b/,
-  operator: /[-+*\/=<>~]|->|=>|->\*|&|\b(?:AND|OR|NOT|EQ|NE|LT|LE|GT|GE|IS\s+INITIAL|IS\s+NOT\s+INITIAL|IS\s+BOUND|IS\s+ASSIGNED)\b/i,
+  number: /\b\d+(?:\.\d+)?\b/,
+  operator: /[-+*\/=<>~]|->|=>|->\*|&&|\|\|/,
   punctuation: /[,.:()]/,
 };
 
-// 2.2 JavaScript / TypeScript 核心定义
+// ==================== 3. 主流编程语言轻量化高亮支持 ====================
 Prism.languages.javascript = {
-  comment: [
-    { pattern: /\/\/.*/, greedy: true },
-    { pattern: /\/\*[\s\S]*?\*\//, greedy: true },
-  ],
-  string: { pattern: /(["'`])(?:\\[\s\S]|(?!\1)[^\\])*\1/, greedy: true },
-  keyword: /\b(?:as|async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|set|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)\b/,
-  boolean: /\b(?:true|false)\b/,
-  function: /\b[a-zA-Z_$][\w$]*(?=\s*(?:\.\s*)?\()/i,
-  number: /\b(?:(?:0[xX][\dA-Fa-f]+|0[bB][01]+|0[oO][0-7]+)|(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)\b/,
-  operator: /--|\+\+|&&|\|\||=>|<=|>=|==|!=|\*\*|[-+*\/%&|^!=<>?~:]/,
+  comment: [/\/\*[\s\S]*?\*\//, /\/\/.*/],
+  string: /(["'`])(?:\\[\s\S]|(?!\1)[^\\])*\1/,
+  keyword: /\b(?:async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|export|extends|finally|for|from|function|get|if|import|in|instanceof|let|new|of|return|set|static|super|switch|this|throw|try|typeof|var|void|while|with|yield)\b/,
+  number: /\b(?:0[xX][0-9a-fA-F]+|0[bB][01]+|\d+(?:\.\d+)?)\b/,
+  operator: /[-+*\/%=!&|<>^?~:]+/,
   punctuation: /[{}[\];(),.:]/,
+  function: /\b[a-zA-Z_$][a-zA-Z0-9_$]*(?=\s*\()/,
 };
 Prism.languages.js = Prism.languages.javascript;
-Prism.languages.typescript = Prism.languages.javascript;
-Prism.languages.ts = Prism.languages.javascript;
+Prism.languages.typescript = Object.assign({}, Prism.languages.javascript, {
+  keyword: /\b(?:type|interface|enum|namespace|declare|as|is|keyof|readonly|implements|async|await|break|case|catch|class|const|continue|default|delete|do|else|export|extends|finally|for|from|function|if|import|in|instanceof|let|new|of|return|switch|this|throw|try|typeof|var|while)\b/,
+});
+Prism.languages.ts = Prism.languages.typescript;
 
-// 2.3 Python
 Prism.languages.python = {
-  comment: { pattern: /#.*/, greedy: true },
-  "string-interpolation": { pattern: /[bBfFuUrR]?"""[\s\S]*?"""|[bBfFuUrR]?'''[\s\S]*?'''/, greedy: true },
-  string: { pattern: /(?:[bBfFuUrR]?(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1)/, greedy: true },
+  comment: /#.*/,
+  string: /(?:"""[\s\S]*?"""|'''[\s\S]*?'''|(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1)/,
   keyword: /\b(?:and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)\b/,
-  boolean: /\b(?:True|False|None)\b/,
-  function: /\b[a-z_]\w*(?=\s*\()/i,
-  number: /\b0x[\da-f]+\b|(?:\b\d+(?:\.\d*)?|\B\d+)(?:e[+-]?\d+)?j?\b/i,
-  operator: /[-+*\/%&|^~=<>!:]+|\b(?:and|or|not|in|is)\b/,
-  punctuation: /[{}[\];(),.]/,
+  number: /\b\d+(?:\.\d+)?\b/,
+  function: /\b[a-zA-Z_][a-zA-Z0-9_]*(?=\s*\()/,
 };
 Prism.languages.py = Prism.languages.python;
 
-// 2.4 SQL
 Prism.languages.sql = {
-  comment: [
-    { pattern: /--.*/, greedy: true },
-    { pattern: /\/\*[\s\S]*?\*\//, greedy: true },
-  ],
-  string: { pattern: /'(?:''|[^'\\]|\\.)*'/, greedy: true },
-  keyword: /\b(?:SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|AND|OR|JOIN|INNER|OUTER|LEFT|RIGHT|GROUP|BY|ORDER|HAVING|LIMIT|OFFSET|AS|ON|IN|NOT|NULL|IS|CREATE|TABLE|DROP|ALTER|VIEW|INDEX|TRIGGER|PROCEDURE|FUNCTION|DATABASE|VALUES|SET|DEFAULT|CASE|WHEN|THEN|ELSE|END|UNION|ALL|DISTINCT|PRIMARY|KEY|FOREIGN|REFERENCES|CHECK|CONSTRAINT)\b/i,
-  boolean: /\b(?:TRUE|FALSE)\b/i,
+  comment: [/--.*/, /\/\*[\s\S]*?\*\//],
+  string: /'(?:''|[^'\r\n])*'/,
+  keyword: /\b(?:SELECT|FROM|WHERE|INSERT|INTO|UPDATE|DELETE|JOIN|LEFT|RIGHT|INNER|OUTER|FULL|CROSS|ON|ORDER|BY|GROUP|HAVING|LIMIT|OFFSET|UNION|ALL|AS|DISTINCT|CREATE|TABLE|INDEX|VIEW|DROP|ALTER|PRIMARY|KEY|FOREIGN|REFERENCES|CHECK|DEFAULT|NULL|NOT|AND|OR|IN|BETWEEN|LIKE|IS|EXISTS|CASE|WHEN|THEN|ELSE|END)\b/i,
   number: /\b\d+(?:\.\d+)?\b/,
-  operator: /[-+*\/=<>!%&|^~]+/,
-  punctuation: /[{}[\];(),.:]/,
+  function: /\b(?:COUNT|SUM|AVG|MIN|MAX|COALESCE|NOW|CONCAT|SUBSTRING|TRIM)\b/i,
 };
 
-// 2.5 JSON
 Prism.languages.json = {
-  property: { pattern: /(^|[^\\])"(?:\\.|[^\\"\r\n])*"(?=\s*:)/, lookbehind: true, greedy: true },
-  string: { pattern: /(^|[^\\])"(?:\\.|[^\\"\r\n])*"(?!\s*:)/, lookbehind: true, greedy: true },
-  number: /-?\b\d+(?:\.\d+)?(?:e[+-]?\d+)?\b/i,
-  boolean: /\b(?:true|false)\b/,
-  null: /\bnull\b/,
-  punctuation: /[{}[\];,:]/,
+  property: /"(?:\\.|[^\\"\r\n])*"(?=\s*:)/,
+  string: /"(?:\\.|[^\\"\r\n])*"/,
+  number: /-?\b\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\b/,
+  punctuation: /[{}[\]:,]/,
+  boolean: /\b(?:true|false|null)\b/,
 };
 
-// 2.6 Bash / Shell
 Prism.languages.bash = {
-  comment: { pattern: /(^|[\s#])#.*/, lookbehind: true, greedy: true },
-  string: [
-    { pattern: /(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1/, greedy: true },
-  ],
-  variable: /\$+(?:[a-zA-Z0-9_?#*@!$]+|\{[a-zA-Z0-9_?#*@!$]+\})/,
-  keyword: /\b(?:if|then|else|elif|fi|case|esac|for|while|until|do|done|in|function|select|return|exit)\b/,
-  boolean: /\b(?:true|false)\b/,
-  operator: /&&|\|\||;;|<<|>>|[=!<>~+*/%&-]/,
-  punctuation: /[{}[\];(),]/,
+  comment: /#.*/,
+  string: /(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1/,
+  keyword: /\b(?:if|then|else|elif|fi|for|while|until|do|done|in|case|esac|function|return|exit|export|local)\b/,
+  variable: /\$[a-zA-Z0-9_?*#@!$-]+/,
+  function: /\b[a-zA-Z_][a-zA-Z0-9_-]*(?=\s*\()/,
 };
 Prism.languages.sh = Prism.languages.bash;
 Prism.languages.shell = Prism.languages.bash;
 
-// 语言别名表与展示名称映射
+// 语言映射表
 const LANG_MAP = {
   abap: { id: "abap", label: "ABAP" },
-  js: { id: "javascript", label: "JavaScript" },
+  "sap-abap": { id: "abap", label: "SAP ABAP" },
   javascript: { id: "javascript", label: "JavaScript" },
-  ts: { id: "typescript", label: "TypeScript" },
+  js: { id: "javascript", label: "JavaScript" },
   typescript: { id: "typescript", label: "TypeScript" },
-  py: { id: "python", label: "Python" },
+  ts: { id: "typescript", label: "TypeScript" },
   python: { id: "python", label: "Python" },
+  py: { id: "python", label: "Python" },
   sql: { id: "sql", label: "SQL" },
   json: { id: "json", label: "JSON" },
   bash: { id: "bash", label: "Bash" },
@@ -216,18 +190,105 @@ const LANG_MAP = {
   shell: { id: "bash", label: "Shell" },
   html: { id: "javascript", label: "HTML" },
   css: { id: "javascript", label: "CSS" },
-  java: { id: "javascript", label: "Java" },
   c: { id: "javascript", label: "C" },
   cpp: { id: "javascript", label: "C++" },
+  csharp: { id: "javascript", label: "C#" },
+  java: { id: "javascript", label: "Java" },
   go: { id: "javascript", label: "Go" },
   rust: { id: "javascript", label: "Rust" },
+  yaml: { id: "javascript", label: "YAML" },
+  markdown: { id: "javascript", label: "Markdown" },
 };
 
-// ==================== 3. 插件核心激活入口与生命周期 ====================
+// ==================== 4. Highlight.js ABAP 语法定义 (用于注入 EdgeEver Lowlight) ====================
+function getAbapHljsDefinition() {
+  return {
+    name: "ABAP",
+    case_insensitive: true,
+    aliases: ["sap-abap", "abap"],
+    keywords: {
+      keyword:
+        "ABBREVIATED ABS ABSTRACT ABSTRACTFINAL ACCEPT ACCEPTING ACCORDING ACOS ACTUAL ADD ADD-CORRESPONDING ADDITIONS ADJACENT AFTER " +
+        "ALIASES ALL ALLOCATE ANALYZER AND APPEND APPENDING AS ASCENDING DESCENDING ASIN ASSIGN ASSIGNING ATAN ATTRIBUTE AUTHORITY-CHECK " +
+        "AVG BACK BACKGOUND BEFORE BETWEEN BINARY BIT BLANK BLOCK BREAK-POINT BUFFER BY BYPASSING BYTE BYTECHARACTER CALL " +
+        "CASTING CEIL CENTERED CHANGE CHANGING CHARACTER CHECK CHECKBOX CLASS-DATA CLASS-EVENTS CLASS-METHODS CLEANUP CLEAR " +
+        "CLASS ENDCLASS CLIENT CLOCK CLOSE COL_BACKGROUND COL_HEADING COL_NORMAL COL_TOTAL COLLECT COLOR COLUMN COMMENT COMMIT COMMON COMMUNICATION COMPARING " +
+        "COMPONENT COMPONENTS COMPUTE CONCATENATE CONDENSE CONSTANTS CONTEXT CONTEXTS CONTINUE CONTROL CONTROLS CONVERSION CONVERT COS COSH COUNT COUNTRY " +
+        "COUNTY CREATE CURRENCY CURRENT CURSOR CUSTOMER-FUNCTION DATA DATABASE DATASET DATE DEALLOCATE DECIMALS DEFAULT DEFERRED " +
+        "DEFINE DEFINING DEFINITION DELETE DELETING DEMAND DESCENDING DESCRIBE DESTINATION DIALOG DIRECTORY DISTANCE DISTINCT DIVIDE DIVIDE-CORRESPONDING " +
+        "DUPLICATE DUPLICATES DURING DYNAMIC EDIT EDITOR-CALL ELSE ELSEIF ENCODING ENDING ENDON ENTRIES ERRORS EVENT EVENTS EXCEPTION EXCEPTIONS EXCEPTION-TABLE " +
+        "EXCLUDE EXCLUDING EXIT EXIT-COMMAND EXPORT EXPORTING EXTENDED EXTENSION EXTRACT FETCH FIELD FIELD-GROUPS FIELDSNO FIELD-SYMBOLS FILTER FINAL FIND " +
+        "FIRST FLOOR FOR FORMAT FORWARDBACKWARD FOUND FRAC FRAME FREE FRIENDS FROM FUNCTION-POOL GET GIVING GROUP HANDLER HASHED HAVING HEADER HEADING " +
+        "HELP-ID HIDE HIGHLOW HOLD HOTSPOT ICON IGNORING IMMEDIATELY IMPLEMENTATION IMPORT IMPORTING IN INCLUDE INCREMENT INDEX INDEX-LINE INHERITING " +
+        "INIT INITIAL INITIALIZATION INNER INNERLEFT INSERT INSTANCES INTENSIFIED INTERFACES INTERVALS INTO INVERTED-DATE IS ITAB JOIN KEEPING " +
+        "KEY KEYS KIND LANGUAGE LAST LEADING LEAVE LEFT LEFT-JUSTIFIED LEFTRIGHT LEFTRIGHTCIRCULAR LEGACY LENGTH LIKE LINE LINE-COUNT LINES LINE-SELECTION " +
+        "LINE-SIZE LIST LIST-PROCESSING LOAD LOAD-OF-PROGRAM LOCAL LOCALE LOG LOG10 LOWER " +
+        "MARGIN MARK MASK MATCH MAX MAXIMUM MEMORY MESSAGE MESSAGE-ID MESSAGES METHODS MIN MOD MODE MODEIN MODIF MODIFIER MODIFY MOVE MOVE-CORRESPONDING " +
+        "MULTIPLY MULTIPLY-CORRESPONDING NEW NEW-LINE NEW-PAGE NEXT NODES NODETABLE NO-DISPLAY NO-GAP NO-GAPS NO-HEADINGWITH-HEADING NO-SCROLLING " +
+        "NO-SCROLLINGSCROLLING NOT NO-TITLE WITH-TITLE NO-ZERO NP NS NUMBER OBJECT OBLIGATORY OCCURENCE OCCURENCES OCCURS OF OFF OFFSET ON ONLY OPEN " +
+        "OPTION OPTIONAL OR ORDER OTHERS OUTER OUTPUT-LENGTH OVERLAY PACK PACKAGE PAGE PAGELAST PAGEOF PAGEPAGE PAGES PARAMETER PARAMETERS PARAMETER-TABLE " +
+        "PART PERFORM PERFORMING PFN PF-STATUS PLACES POS_HIGH POS_LOW POSITION POSITIONS PRIMARY PRINT PRINT-CONTROL PRIVATE PROCESS PROGRAM PROPERTY " +
+        "PROTECTED PUBLIC PUSHBUTTON PUT QUICKINFO RADIOBUTTON RAISE RAISING RANGE RANGES READ RECEIVE RECEIVING REDEFINITION " +
+        "REF REFERENCE REFRESH REJECT RENAMING REPLACE REPLACEMENT REPORT RESERVE RESET RESOLUTION RESULTS RETURN RETURNING RIGHT RIGHT-JUSTIFIED " +
+        "ROLLBACK ROWS RUN SCAN SCREEN SCREEN-GROUP1 SCREEN-GROUP2 SCREEN-GROUP3 SCREEN-GROUP4 SCREEN-GROUP5 SCREEN-INPUT SCREEN-INTENSIFIED SCROLL " +
+        "SCROLL-BOUNDARY SEARCH SECTION SELECT SELECTION SELECTIONS SELECTION-SCREEN SELECTION-SET SELECTION-TABLE SELECT-OPTIONS SEND SEPARATED SET " +
+        "SHARED SHIFT SIGN SIN SINGLE SINGLEDISTINCT SINH SIZE SKIP SORT SORTABLE SPECIFIED SPLIT SQL SQRT STABLE STAMP STANDARD START STARTING " +
+        "STATICS STEP-LOOP STOP STRLEN STRUCTURE SUBMIT SUBTRACT SUBTRACT-CORRESPONDING SUFFIX SUM SUPPLY SUPPRESS SYMBOLS SYSTEM-EXCEPTIONS TABLE TABLENAME " +
+        "TABLES TABLEVIEW TAN TANH TASK TEXT THEN TIME TIMES TITLE TITLEBAR TO TOPIC TOP-OF-PAGE TRAILING TRANSACTION TRANSFER TRANSLATE TRUNC TYPE " +
+        "TYPELIKE TYPE-POOL TYPE-POOLS TYPES ULINE UNION UNIQUE UNIT UNTIL UP UPDATE UPPER UPPERLOWER USER-COMMAND USING VALUE VALUES VARY VARYING " +
+        "VERSION VIA WAIT WHEN WHERE WINDOW WITH WORK WRITE XSTRLEN ZONE " +
+        "CA CN CO CP CS EQ GE GT LE LT NA NE " +
+        "START-OF-SELECTION START-OF-PAGE END-OF-PAGE END-OF-SELECTION AT ENDAT " +
+        "EQUIV BOUND ASSIGNED SUPPLIED INSTANCE VALUE COND CONV CAST SWITCH",
+      literal: "abap_true abap_false abap_undefined space null",
+      built_in:
+        "DO FORM IF LOOP MODULE START-OF_FILE DEFINE WHILE BEGIN ENDDO ENDFORM ENDIF ENDLOOP ENDMODULE END-OF_FILE END-OF-DEFINITION ENDWHILE END " +
+        "METHOD ENDMETHOD CHAIN ENDCHAIN CASE ENDCASE FUNCTION ENDFUNCTION ELSEIF ELSE TRY ENDTRY CATCH " +
+        "sy-subrc sy-tabix sy-index sy-ucomm sy-datum sy-uzeit sy-uname sy-mandt sy-dynnr sy-tcode SY-SUBRC SY-TABIX SY-INDEX SY-UCOMM SY-DATUM SY-UZEIT SY-UNAME SY-MANDT",
+    },
+    contains: [
+      {
+        className: "string",
+        begin: /'/,
+        end: /'/,
+        contains: [{ begin: /''/ }],
+      },
+      {
+        className: "string",
+        begin: /`/,
+        end: /`/,
+        contains: [{ begin: /``/ }],
+      },
+      {
+        className: "string",
+        begin: /\|/,
+        end: /\|/,
+        contains: [{ begin: /\\\|/ }],
+      },
+      {
+        className: "number",
+        begin: /\b\d+(?:\.\d+)?\b/,
+      },
+      {
+        className: "comment",
+        begin: /^[*]/,
+        relevance: 0,
+        end: /$/,
+      },
+      {
+        className: "comment",
+        begin: /"/,
+        relevance: 0,
+        end: /$/,
+      },
+    ],
+  };
+}
 
+// ==================== 5. 插件主生命周期定义 ====================
 export default {
   async activate(context) {
-    let settings = {
+    const settings = {
       showMacDots: true,
       showLanguageBadge: true,
       showCopyButton: true,
@@ -236,7 +297,6 @@ export default {
       codeTheme: "one-dark",
     };
 
-    // 读取持久化设置
     const loadSettings = async () => {
       try {
         const dots = await context.settings.get("show_mac_dots");
@@ -257,74 +317,118 @@ export default {
 
     await loadSettings();
 
-    // 监听设置变化实时热重载
-    context.events.on("settings.changed", async () => {
-      await loadSettings();
-      // 清除旧渲染并重新执行
-      document.querySelectorAll("pre.edgeever-code-pro-block").forEach((pre) => {
-        delete pre.dataset.codeProProcessed;
-        const bar = pre.querySelector(".edgeever-code-pro-toolbar");
-        if (bar) bar.remove();
-        const gutters = pre.querySelectorAll(".edgeever-code-line-numbers");
-        gutters.forEach((g) => g.remove());
-      });
-      processAllCodeBlocks();
-    });
+    // 尝试将 ABAP 语法注入 EdgeEver 内置的 Lowlight / TipTap 实例
+    let abapInjectedIntoLowlight = false;
+    function tryInjectAbapIntoLowlight() {
+      if (abapInjectedIntoLowlight) return true;
+      const pm = document.querySelector(".ProseMirror");
+      if (!pm) return false;
+
+      let editor = pm.pmViewDesc?.view?.editor;
+      if (!editor) {
+        const fiberKey = Object.keys(pm).find(
+          (k) => k.startsWith("__reactFiber$") || k.startsWith("__reactInternalInstance$")
+        );
+        if (fiberKey) {
+          let fiber = pm[fiberKey];
+          while (fiber) {
+            if (fiber.memoizedProps?.editor) {
+              editor = fiber.memoizedProps.editor;
+              break;
+            }
+            fiber = fiber.return;
+          }
+        }
+      }
+
+      if (editor && editor.extensionManager) {
+        const codeBlockExt = editor.extensionManager.extensions.find((e) => e.name === "codeBlock");
+        const lowlight = codeBlockExt?.options?.lowlight;
+        if (lowlight) {
+          const registerFn = lowlight.register || lowlight.registerLanguage;
+          if (typeof registerFn === "function") {
+            try {
+              registerFn.call(lowlight, "abap", getAbapHljsDefinition);
+              registerFn.call(lowlight, "sap-abap", getAbapHljsDefinition);
+              abapInjectedIntoLowlight = true;
+              if (editor.view && editor.state) {
+                editor.view.dispatch(editor.state.tr);
+              }
+              return true;
+            } catch (e) {}
+          }
+        }
+      }
+      return false;
+    }
 
     /**
-     * 对单个代码块执行高亮与 UI 包装
+     * 判断文本是否包含明显的 ABAP 语法特征
      */
-    function beautifyCodeBlock(pre) {
-      if (pre.dataset.codeProProcessed === "true") return;
+    function detectIsAbap(codeText) {
+      return /\b(REPORT\s+[A-Z0-9_]+|DATA:?|TYPES:?|FORM\s+[A-Z0-9_]+|CALL\s+FUNCTION|SELECT\s+SINGLE|TABLES:?|CLASS\s+[A-Z0-9_]+\s+DEFINITION|METHOD\s+[A-Z0-9_]+|ENDMETHOD|ENDFORM|ENDSELECT|SY-SUBRC)\b/i.test(
+        codeText
+      );
+    }
 
-      const code = pre.querySelector("code");
-      if (!code) return;
+    /**
+     * 对单个代码块执行 UI 装饰与语法高亮
+     * 兼容 EdgeEver 原生 .edgeever-code-block 容器与标准 pre/code
+     */
+    function beautifyCodeBlock(block) {
+      // 忽略正在渲染 SVG 的 Mermaid 代码块
+      if (block.classList.contains("edgeever-mermaid-code-block") && !block.classList.contains("is-source-visible")) {
+        return;
+      }
 
-      const rawText = code.textContent || "";
+      // 获取代码源容器
+      const sourceEl = block.querySelector(".edgeever-code-source") || block.querySelector("code") || block;
+      if (!sourceEl) return;
+
+      const rawText = sourceEl.textContent || "";
       if (!rawText.trim()) return;
 
       // 1. 语言识别与嗅探
-      let detectedLang = "";
-      const classList = Array.from(code.classList).concat(Array.from(pre.classList));
-      const langClass = classList.find((c) => c.startsWith("language-"));
-      if (langClass) {
-        detectedLang = langClass.replace("language-", "").toLowerCase();
-      } else if (pre.dataset.language) {
-        detectedLang = pre.dataset.language.toLowerCase();
+      let detectedLang = (block.getAttribute("data-language") || block.dataset.language || "").trim().toLowerCase();
+      if (!detectedLang || detectedLang === "plaintext") {
+        const classList = Array.from(block.classList).concat(Array.from(sourceEl.classList));
+        const langClass = classList.find((c) => c.startsWith("language-"));
+        if (langClass) {
+          detectedLang = langClass.replace("language-", "").toLowerCase();
+        }
       }
 
-      // 若未指定语言且启用了 ABAP 智能嗅探
-      if (!detectedLang && settings.autoDetectAbap) {
-        if (
-          /\b(REPORT\s+[A-Z0-9_]+|DATA:?|TYPES:?|FORM\s+[A-Z0-9_]+|CALL\s+FUNCTION|SELECT\s+SINGLE|TABLES:?)\b/i.test(
-            rawText
-          )
-        ) {
+      // ABAP 自动嗅探
+      if ((!detectedLang || detectedLang === "plaintext") && settings.autoDetectAbap) {
+        if (detectIsAbap(rawText)) {
           detectedLang = "abap";
+          block.setAttribute("data-language", "abap");
         }
       }
 
       detectedLang = detectedLang || "text";
       const langMeta = LANG_MAP[detectedLang] || { id: detectedLang, label: detectedLang.toUpperCase() };
 
-      // 2. 语法高亮着色
-      const grammar = Prism.languages[langMeta.id] || Prism.languages.abap;
-      const highlightedHtml = Prism.highlight(rawText, grammar);
-
-      // 3. 构建现代代码块 DOM
-      pre.classList.add("edgeever-code-pro-block");
-      // 应用当前主题类
-      pre.classList.remove(
+      // 2. 标记与样式类应用
+      block.classList.add("edgeever-code-pro-block");
+      block.classList.remove(
         "edgeever-theme-one-dark",
         "edgeever-theme-github-dark",
         "edgeever-theme-tokyo-night",
         "edgeever-theme-github-light"
       );
-      pre.classList.add(`edgeever-theme-${settings.codeTheme}`);
+      block.classList.add(`edgeever-theme-${settings.codeTheme}`);
 
-      // 3.1 构建顶部 Mac Toolbar
-      const toolbar = document.createElement("div");
-      toolbar.className = "edgeever-code-pro-toolbar";
+      // 3. 构建/更新顶部 Mac 风格工具栏
+      let toolbar = block.querySelector(".edgeever-code-pro-toolbar");
+      if (!toolbar) {
+        toolbar = document.createElement("div");
+        toolbar.className = "edgeever-code-pro-toolbar";
+        toolbar.setAttribute("contenteditable", "false");
+        block.insertBefore(toolbar, block.firstChild);
+      } else {
+        toolbar.innerHTML = "";
+      }
 
       const left = document.createElement("div");
       left.className = "edgeever-code-pro-left";
@@ -332,7 +436,8 @@ export default {
       if (settings.showMacDots) {
         const dots = document.createElement("div");
         dots.className = "edgeever-code-mac-dots";
-        dots.innerHTML = '<span class="edgeever-code-dot red"></span><span class="edgeever-code-dot yellow"></span><span class="edgeever-code-dot green"></span>';
+        dots.innerHTML =
+          '<span class="edgeever-code-dot red"></span><span class="edgeever-code-dot yellow"></span><span class="edgeever-code-dot green"></span>';
         left.appendChild(dots);
       }
 
@@ -350,6 +455,7 @@ export default {
         const copyBtn = document.createElement("button");
         copyBtn.className = "edgeever-code-copy-btn";
         copyBtn.type = "button";
+        copyBtn.setAttribute("contenteditable", "false");
         copyBtn.innerHTML = `
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -358,59 +464,93 @@ export default {
           <span>复制</span>
         `;
         copyBtn.onclick = (e) => {
+          e.preventDefault();
           e.stopPropagation();
-          navigator.clipboard.writeText(rawText).then(() => {
+          const textToCopy = sourceEl.textContent || "";
+          navigator.clipboard.writeText(textToCopy).then(() => {
             copyBtn.classList.add("copied");
-            copyBtn.querySelector("span").textContent = "已复制 ✓";
+            const span = copyBtn.querySelector("span");
+            if (span) span.textContent = "已复制 ✓";
             setTimeout(() => {
               copyBtn.classList.remove("copied");
-              copyBtn.querySelector("span").textContent = "复制";
+              if (span) span.textContent = "复制";
             }, 2000);
           });
         };
         toolbar.appendChild(copyBtn);
       }
 
-      // 3.2 构建内容及行号槽
-      code.innerHTML = highlightedHtml;
-
+      // 4. 行号槽管理
       const linesCount = rawText.split("\n").length;
-      if (settings.showLineNumbers && linesCount > 1) {
-        const contentWrap = document.createElement("div");
-        contentWrap.className = "edgeever-code-pro-content";
+      let existingGutter = block.querySelector(".edgeever-code-line-numbers");
+      if (existingGutter) existingGutter.remove();
 
+      if (settings.showLineNumbers && linesCount > 1) {
+        block.classList.add("has-line-numbers");
         const lineNumbers = document.createElement("div");
         lineNumbers.className = "edgeever-code-line-numbers";
+        lineNumbers.setAttribute("contenteditable", "false");
+        lineNumbers.setAttribute("aria-hidden", "true");
         let numbersHtml = "";
         for (let num = 1; num <= linesCount; num++) {
           numbersHtml += `<span class="edgeever-code-line-number">${num}</span>`;
         }
         lineNumbers.innerHTML = numbersHtml;
-
-        contentWrap.appendChild(lineNumbers);
-        code.parentNode.insertBefore(contentWrap, code);
-        contentWrap.appendChild(code);
+        block.insertBefore(lineNumbers, sourceEl);
+      } else {
+        block.classList.remove("has-line-numbers");
       }
 
-      pre.insertBefore(toolbar, pre.firstChild);
-      pre.dataset.codeProProcessed = "true";
+      // 5. 语法着色补充（当原生 lowlight 未处理且用户非聚焦编辑状态时，由 Prism 执行着色）
+      const isEditing = document.activeElement === sourceEl || sourceEl.contains(document.activeElement);
+      const hasNativeHighlight = sourceEl.querySelector(".hljs-keyword, .hljs-string, .token");
+      if (!hasNativeHighlight && !isEditing) {
+        const grammar = Prism.languages[langMeta.id] || (detectedLang === "abap" ? Prism.languages.abap : null);
+        if (grammar) {
+          sourceEl.innerHTML = Prism.highlight(rawText, grammar);
+        }
+      }
+
+      block.dataset.codeProProcessed = "true";
     }
 
     function processAllCodeBlocks() {
-      const root = document.querySelector(".ProseMirror, .tiptap, article") || document.body;
-      const pres = root.querySelectorAll("pre:not([data-code-pro-processed='true'])");
-      pres.forEach(beautifyCodeBlock);
+      tryInjectAbapIntoLowlight();
+      const blocks = document.querySelectorAll(
+        ".edgeever-code-block:not([data-code-pro-processed='true']), pre:not([data-code-pro-processed='true'])"
+      );
+      blocks.forEach(beautifyCodeBlock);
     }
 
-    // 防抖监听 DOM
+    function refreshAllCodeBlocks() {
+      document.querySelectorAll(".edgeever-code-pro-block").forEach((el) => {
+        delete el.dataset.codeProProcessed;
+        el.querySelector(".edgeever-code-pro-toolbar")?.remove();
+        el.querySelector(".edgeever-code-line-numbers")?.remove();
+        el.classList.remove("has-line-numbers");
+      });
+      processAllCodeBlocks();
+    }
+
+    // 监听设置变化实时热重载
+    context.events.on("settings.changed", async () => {
+      await loadSettings();
+      refreshAllCodeBlocks();
+    });
+
+    // 监听 DOM 树变动（笔记切换、代码块插入、内容更新）
     let debounceTimer = null;
     const observer = new MutationObserver(() => {
       clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(processAllCodeBlocks, 80);
+      debounceTimer = setTimeout(processAllCodeBlocks, 60);
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
+
+    // 初始执行
     processAllCodeBlocks();
+    // 延迟 300ms 再次触发一次以保证编辑器水合完成后捕获
+    setTimeout(processAllCodeBlocks, 300);
 
     // 注册手动刷新命令
     context.commands.register({
@@ -418,12 +558,7 @@ export default {
       title: "刷新所有代码块高亮与美化",
       listed: false,
       run() {
-        document.querySelectorAll("pre.edgeever-code-pro-block").forEach((el) => {
-          delete el.dataset.codeProProcessed;
-          el.querySelector(".edgeever-code-pro-toolbar")?.remove();
-          el.querySelector(".edgeever-code-line-numbers")?.remove();
-        });
-        processAllCodeBlocks();
+        refreshAllCodeBlocks();
         context.ui.showNotice("代码高亮与美化已全部刷新完成！");
       },
     });
@@ -433,9 +568,16 @@ export default {
       observer.disconnect();
       document.querySelectorAll(".edgeever-code-pro-toolbar").forEach((b) => b.remove());
       document.querySelectorAll(".edgeever-code-line-numbers").forEach((g) => g.remove());
-      document.querySelectorAll("pre.edgeever-code-pro-block").forEach((p) => {
+      document.querySelectorAll(".edgeever-code-pro-block").forEach((p) => {
         delete p.dataset.codeProProcessed;
-        p.classList.remove("edgeever-code-pro-block");
+        p.classList.remove(
+          "edgeever-code-pro-block",
+          "has-line-numbers",
+          "edgeever-theme-one-dark",
+          "edgeever-theme-github-dark",
+          "edgeever-theme-tokyo-night",
+          "edgeever-theme-github-light"
+        );
       });
     };
   },
