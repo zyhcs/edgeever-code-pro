@@ -1,0 +1,268 @@
+/* ==========================================================================
+   EdgeEver Code Pro - 现代代码块设计系统与语法高亮
+   ========================================================================== */
+
+/* 1. 代码块容器整体卡片化 */
+pre.edgeever-code-pro-block {
+  position: relative !important;
+  margin: 1.25em 0 !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--code-border, rgba(148, 163, 184, 0.22)) !important;
+  background-color: var(--code-bg, #1e1e24) !important;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.12), 0 2px 6px -1px rgba(0, 0, 0, 0.08) !important;
+  overflow: hidden !important;
+  font-family: ui-monospace, "JetBrains Mono", "Fira Code", SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 13.5px !important;
+  line-height: 1.62 !important;
+}
+
+/* 2. 顶部 Mac 风格工具栏 */
+.edgeever-code-pro-toolbar {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  background: var(--toolbar-bg, rgba(24, 24, 30, 0.95));
+  border-bottom: 1px solid var(--toolbar-border, rgba(255, 255, 255, 0.08));
+  user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.edgeever-code-pro-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Mac 三色小圆点 */
+.edgeever-code-mac-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.edgeever-code-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.edgeever-code-dot.red { background: #ff5f56; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); }
+.edgeever-code-dot.yellow { background: #ffbd2e; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); }
+.edgeever-code-dot.green { background: #27c93f; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); }
+
+/* 语言徽标 Badge */
+.edgeever-code-lang-badge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--lang-color, #94a3b8);
+  background: var(--lang-bg, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--lang-border, rgba(255, 255, 255, 0.06));
+  padding: 2px 8px;
+  border-radius: 5px;
+}
+
+/* 一键复制按钮 */
+.edgeever-code-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #94a3b8;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.edgeever-code-copy-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.edgeever-code-copy-btn.copied {
+  color: #34d399 !important;
+  border-color: rgba(52, 211, 153, 0.4) !important;
+  background: rgba(52, 211, 153, 0.12) !important;
+}
+
+/* 3. 代码正文内容滚动区域 */
+.edgeever-code-pro-content {
+  display: flex;
+  overflow-x: auto;
+  padding: 12px 0 16px 0;
+  tab-size: 2;
+}
+
+/* 4. 行号区域（复制时不随内容复制） */
+.edgeever-code-line-numbers {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 0 14px 0 16px;
+  border-right: 1px solid var(--gutter-border, rgba(255, 255, 255, 0.08));
+  color: var(--gutter-color, #52525b);
+  user-select: none;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.edgeever-code-line-number {
+  display: block;
+}
+
+/* 代码容器本体 */
+pre.edgeever-code-pro-block code {
+  flex: 1;
+  display: block;
+  padding: 0 18px !important;
+  overflow-x: auto;
+  background: transparent !important;
+  border: none !important;
+  color: var(--code-fg, #abb2bf);
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  white-space: pre !important;
+}
+
+/* ==========================================================================
+   高亮配色方案：One Dark Pro (默认)
+   ========================================================================== */
+.edgeever-theme-one-dark {
+  --code-bg: #21252b;
+  --code-fg: #abb2bf;
+  --toolbar-bg: #1b1d23;
+  --toolbar-border: rgba(255, 255, 255, 0.06);
+  --code-border: rgba(255, 255, 255, 0.08);
+  --gutter-color: #5c6370;
+  --gutter-border: rgba(255, 255, 255, 0.06);
+}
+
+.edgeever-theme-one-dark .token.keyword,
+.edgeever-theme-one-dark .token.abap-keyword { color: #c678dd !important; font-weight: 600; }
+
+.edgeever-theme-one-dark .token.function,
+.edgeever-theme-one-dark .token.abap-function { color: #61afef !important; }
+
+.edgeever-theme-one-dark .token.string,
+.edgeever-theme-one-dark .token.abap-string { color: #98c379 !important; }
+
+.edgeever-theme-one-dark .token.comment,
+.edgeever-theme-one-dark .token.abap-comment { color: #5c6370 !important; font-style: italic; }
+
+.edgeever-theme-one-dark .token.number,
+.edgeever-theme-one-dark .token.abap-number { color: #d19a66 !important; }
+
+.edgeever-theme-one-dark .token.class-name,
+.edgeever-theme-one-dark .token.type,
+.edgeever-theme-one-dark .token.abap-type { color: #e5c07b !important; }
+
+.edgeever-theme-one-dark .token.abap-system-var { color: #e06c75 !important; font-weight: 600; }
+
+.edgeever-theme-one-dark .token.operator { color: #56b6c2 !important; }
+.edgeever-theme-one-dark .token.punctuation { color: #abb2bf; }
+.edgeever-theme-one-dark .token.boolean { color: #d19a66; font-weight: 600; }
+
+/* ==========================================================================
+   高亮配色方案：GitHub Dark
+   ========================================================================== */
+.edgeever-theme-github-dark {
+  --code-bg: #0d1117;
+  --code-fg: #c9d1d9;
+  --toolbar-bg: #161b22;
+  --toolbar-border: #30363d;
+  --code-border: #30363d;
+  --gutter-color: #484f58;
+  --gutter-border: #21262d;
+}
+
+.edgeever-theme-github-dark .token.keyword,
+.edgeever-theme-github-dark .token.abap-keyword { color: #ff7b72 !important; font-weight: 600; }
+.edgeever-theme-github-dark .token.function,
+.edgeever-theme-github-dark .token.abap-function { color: #d2a8ff !important; }
+.edgeever-theme-github-dark .token.string,
+.edgeever-theme-github-dark .token.abap-string { color: #a5d6ff !important; }
+.edgeever-theme-github-dark .token.comment,
+.edgeever-theme-github-dark .token.abap-comment { color: #8b949e !important; font-style: italic; }
+.edgeever-theme-github-dark .token.number,
+.edgeever-theme-github-dark .token.abap-number { color: #79c0ff !important; }
+.edgeever-theme-github-dark .token.abap-system-var { color: #ffa657 !important; font-weight: 600; }
+.edgeever-theme-github-dark .token.type,
+.edgeever-theme-github-dark .token.abap-type { color: #7ee787 !important; }
+
+/* ==========================================================================
+   高亮配色方案：Tokyo Night
+   ========================================================================== */
+.edgeever-theme-tokyo-night {
+  --code-bg: #1a1b26;
+  --code-fg: #a9b1d6;
+  --toolbar-bg: #16161e;
+  --toolbar-border: #24283b;
+  --code-border: #24283b;
+  --gutter-color: #3b4261;
+  --gutter-border: #24283b;
+}
+
+.edgeever-theme-tokyo-night .token.keyword,
+.edgeever-theme-tokyo-night .token.abap-keyword { color: #bb9af7 !important; font-weight: 600; }
+.edgeever-theme-tokyo-night .token.function,
+.edgeever-theme-tokyo-night .token.abap-function { color: #7aa2f7 !important; }
+.edgeever-theme-tokyo-night .token.string,
+.edgeever-theme-tokyo-night .token.abap-string { color: #9ece6a !important; }
+.edgeever-theme-tokyo-night .token.comment,
+.edgeever-theme-tokyo-night .token.abap-comment { color: #565f89 !important; font-style: italic; }
+.edgeever-theme-tokyo-night .token.number,
+.edgeever-theme-tokyo-night .token.abap-number { color: #ff9e64 !important; }
+.edgeever-theme-tokyo-night .token.abap-system-var { color: #f7768e !important; font-weight: 600; }
+.edgeever-theme-tokyo-night .token.type,
+.edgeever-theme-tokyo-night .token.abap-type { color: #2ac3de !important; }
+
+/* ==========================================================================
+   高亮配色方案：GitHub Light (浅色日间)
+   ========================================================================== */
+.edgeever-theme-github-light {
+  --code-bg: #f6f8fa;
+  --code-fg: #24292f;
+  --toolbar-bg: #eaeef2;
+  --toolbar-border: #d0d7de;
+  --code-border: #d0d7de;
+  --gutter-color: #8c959f;
+  --gutter-border: #e1e4e8;
+  --lang-color: #57606a;
+  --lang-bg: rgba(0, 0, 0, 0.05);
+}
+
+.edgeever-theme-github-light .edgeever-code-copy-btn {
+  color: #57606a;
+  border-color: rgba(0, 0, 0, 0.15);
+}
+.edgeever-theme-github-light .edgeever-code-copy-btn:hover {
+  color: #24292f;
+  background: rgba(0, 0, 0, 0.08);
+}
+.edgeever-theme-github-light .token.keyword,
+.edgeever-theme-github-light .token.abap-keyword { color: #cf222e !important; font-weight: 600; }
+.edgeever-theme-github-light .token.function,
+.edgeever-theme-github-light .token.abap-function { color: #8250df !important; }
+.edgeever-theme-github-light .token.string,
+.edgeever-theme-github-light .token.abap-string { color: #0a3069 !important; }
+.edgeever-theme-github-light .token.comment,
+.edgeever-theme-github-light .token.abap-comment { color: #6e7781 !important; font-style: italic; }
+.edgeever-theme-github-light .token.number,
+.edgeever-theme-github-light .token.abap-number { color: #0550ae !important; }
+.edgeever-theme-github-light .token.abap-system-var { color: #953800 !important; font-weight: 600; }
+.edgeever-theme-github-light .token.type,
+.edgeever-theme-github-light .token.abap-type { color: #116329 !important; }

@@ -1,0 +1,65 @@
+{
+  "type": "plugin",
+  "id": "org.edgeever.plugins.code-pro",
+  "name": "Code Pro: Syntax Highlight & Beautifier",
+  "version": "1.0.0",
+  "apiVersion": "2",
+  "settingsUi": "host",
+  "description": "Professional code block beautification with standard syntax highlighting, full SAP ABAP support, Mac-style header bar, language badge, line numbers, and quick copy.",
+  "locales": {
+    "zh-CN": {
+      "name": "Code Pro: 代码高亮与代码块美化",
+      "description": "专业级代码块美化与语法高亮插件。深度支持 SAP ABAP 及多语系高亮，提供 Mac 风格窗口栏、语言徽标、行号展示与一键复制功能。"
+    }
+  },
+  "author": "zyhcs",
+  "entry": "./main.js",
+  "platforms": ["web", "desktop"],
+  "permissions": ["editor:read", "ui:notices"],
+  "settings": {
+    "fields": [
+      {
+        "key": "showMacDots",
+        "type": "boolean",
+        "label": "显示 Mac 风格三色圆点装饰",
+        "default": true
+      },
+      {
+        "key": "showLanguageBadge",
+        "type": "boolean",
+        "label": "显示代码语言指示徽标",
+        "default": true
+      },
+      {
+        "key": "showCopyButton",
+        "type": "boolean",
+        "label": "显示一键复制代码按钮",
+        "default": true
+      },
+      {
+        "key": "showLineNumbers",
+        "type": "boolean",
+        "label": "显示代码行号",
+        "default": true
+      },
+      {
+        "key": "autoDetectAbap",
+        "type": "boolean",
+        "label": "自动嗅探并高亮未标注语言的 ABAP 代码",
+        "default": true
+      },
+      {
+        "key": "codeTheme",
+        "type": "select",
+        "label": "代码高亮配色方案",
+        "default": "one-dark",
+        "options": [
+          { "value": "one-dark", "label": "One Dark Pro (经典深色)" },
+          { "value": "github-dark", "label": "GitHub Dark (优雅极简)" },
+          { "value": "tokyo-night", "label": "Tokyo Night (东京之夜)" },
+          { "value": "github-light", "label": "GitHub Light (明亮清爽)" }
+        ]
+      }
+    ]
+  }
+}
