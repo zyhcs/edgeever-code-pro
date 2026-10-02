@@ -254,7 +254,7 @@ pre.edgeever-code-pro-block.has-line-numbers code {
   color: var(--gutter-color, #5c6370) !important;
   border-right: 1px solid var(--gutter-border, rgba(255, 255, 255, 0.08)) !important;
   user-select: none !important;
-  pointer-events: none !important;
+  pointer-events: auto !important;
   font-family: inherit !important;
   font-size: inherit !important;
   line-height: inherit !important;
@@ -267,6 +267,57 @@ pre.edgeever-code-pro-block.has-line-numbers code {
   height: 1.62em !important;
   line-height: 1.62em !important;
   opacity: 0.65 !important;
+  cursor: pointer !important;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+}
+
+.edgeever-code-line-number:hover {
+  color: #61afef !important;
+  opacity: 1 !important;
+  background: rgba(97, 175, 239, 0.15);
+}
+
+.edgeever-code-line-number.is-active-line-num {
+  color: #61afef !important;
+  font-weight: 700 !important;
+  opacity: 1 !important;
+  background: rgba(97, 175, 239, 0.25);
+  box-shadow: inset -2px 0 0 #61afef;
+}
+
+/* 逐行包裹与重点行聚焦高亮 */
+.edgeever-code-line {
+  display: block !important;
+  min-height: 1.62em !important;
+  line-height: 1.62em !important;
+  padding: 0 4px !important;
+  border-radius: 3px !important;
+  margin: 0 -4px !important;
+  transition: opacity 0.2s ease, background-color 0.2s ease !important;
+}
+
+.edgeever-code-line.is-highlighted {
+  background-color: rgba(97, 175, 239, 0.18) !important;
+  border-left: 3px solid #61afef !important;
+  padding-left: 6px !important;
+  box-shadow: 0 0 12px rgba(97, 175, 239, 0.12) !important;
+}
+
+.edgeever-code-block.has-line-focus .edgeever-code-line:not(.is-highlighted),
+pre.edgeever-code-block.has-line-focus code .edgeever-code-line:not(.is-highlighted) {
+  opacity: 0.38 !important;
+}
+
+.edgeever-theme-github-light .edgeever-code-line.is-highlighted {
+  background-color: rgba(9, 105, 218, 0.12) !important;
+  border-left-color: #0969da !important;
+}
+
+.edgeever-theme-github-light .edgeever-code-line-number.is-active-line-num {
+  color: #0969da !important;
+  background: rgba(9, 105, 218, 0.15);
+  box-shadow: inset -2px 0 0 #0969da;
 }
 
 /* 6. 折叠模式核心样式 */
@@ -741,3 +792,292 @@ mark.edgeever-code-search-current {
 .edgeever-theme-github-light .token.abap-type,
 .edgeever-theme-github-light .hljs-type,
 .edgeever-theme-github-light .hljs-title.class_ { color: #116329 !important; }
+
+/* ==========================================================================
+   9. Ray.so 风格代码卡片导出弹窗
+   ========================================================================== */
+.edgeever-code-card-modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  background: rgba(0, 0, 0, 0.68) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 24px !important;
+  animation: edgeeverFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes edgeeverFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.edgeever-code-card-modal {
+  width: 100% !important;
+  max-width: 860px !important;
+  max-height: 90vh !important;
+  background: #181a20 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.75) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+.edgeever-code-card-modal-header {
+  height: 52px !important;
+  padding: 0 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  user-select: none !important;
+}
+
+.edgeever-code-card-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  color: #f1f5f9 !important;
+}
+
+.edgeever-code-card-controls {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.edgeever-code-card-label {
+  font-size: 12px !important;
+  color: #94a3b8 !important;
+}
+
+.edgeever-code-gradient-picker {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.edgeever-code-gradient-picker .gradient-dot {
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  border: 2px solid transparent !important;
+  transition: all 0.15s ease !important;
+}
+
+.edgeever-code-gradient-picker .gradient-dot:hover {
+  transform: scale(1.15) !important;
+}
+
+.edgeever-code-gradient-picker .gradient-dot.active {
+  border-color: #ffffff !important;
+  transform: scale(1.15) !important;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5) !important;
+}
+
+.edgeever-code-card-checkbox {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 12px !important;
+  color: #94a3b8 !important;
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
+.edgeever-code-card-modal-close {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #94a3b8 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 15px !important;
+  transition: all 0.15s ease !important;
+}
+
+.edgeever-code-card-modal-close:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+.edgeever-code-card-preview-viewport {
+  flex: 1 !important;
+  padding: 32px !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #0f1115 !important;
+}
+
+/* 卡片真实结构 */
+.edgeever-ray-card {
+  padding: 36px 40px !important;
+  border-radius: 16px !important;
+  min-width: 480px !important;
+  max-width: 760px !important;
+  width: 100% !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4) !important;
+  position: relative !important;
+  transition: background 0.3s ease !important;
+}
+
+.edgeever-ray-card[data-gradient="aurora"] {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #ec4899 100%) !important;
+}
+.edgeever-ray-card[data-gradient="cyber"] {
+  background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 50%, #6366f1 100%) !important;
+}
+.edgeever-ray-card[data-gradient="sunset"] {
+  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%) !important;
+}
+.edgeever-ray-card[data-gradient="emerald"] {
+  background: linear-gradient(135deg, #059669 0%, #10b981 50%, #06b6d4 100%) !important;
+}
+.edgeever-ray-card[data-gradient="dark"] {
+  background: linear-gradient(135deg, #18181b 0%, #27272a 50%, #3f3f46 100%) !important;
+}
+
+.edgeever-ray-window {
+  background: #21252b !important;
+  border-radius: 10px !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  overflow: hidden !important;
+}
+
+.edgeever-ray-header {
+  height: 38px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 14px !important;
+  background: #1b1d23 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.edgeever-ray-lang-badge {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #94a3b8 !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  padding: 2px 7px !important;
+  border-radius: 4px !important;
+  text-transform: uppercase !important;
+}
+
+.edgeever-ray-body {
+  display: flex !important;
+  padding: 14px 16px !important;
+  color: #abb2bf !important;
+  position: relative !important;
+  font-family: ui-monospace, "JetBrains Mono", Menlo, monospace !important;
+  font-size: 13.5px !important;
+  line-height: 1.62 !important;
+  overflow-x: auto !important;
+}
+
+.edgeever-ray-gutter {
+  text-align: right !important;
+  padding-right: 14px !important;
+  color: #5c6370 !important;
+  user-select: none !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  margin-right: 14px !important;
+  font-size: 13.5px !important;
+}
+
+.edgeever-ray-gutter-num {
+  height: 1.62em !important;
+  line-height: 1.62em !important;
+}
+
+.edgeever-ray-code {
+  flex: 1 !important;
+  margin: 0 !important;
+  white-space: pre !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+}
+
+.edgeever-ray-watermark {
+  text-align: right !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: rgba(255, 255, 255, 0.45) !important;
+  margin-top: 12px !important;
+  letter-spacing: 0.5px !important;
+}
+
+.edgeever-code-card-modal-footer {
+  height: 58px !important;
+  padding: 0 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.edgeever-code-card-tip {
+  font-size: 12px !important;
+  color: #64748b !important;
+}
+
+.edgeever-code-card-footer-btns {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.edgeever-code-card-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 6px 14px !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  color: #e2e8f0 !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.16s ease !important;
+}
+
+.edgeever-code-card-btn:hover {
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #ffffff !important;
+}
+
+.edgeever-code-card-btn.primary {
+  background: #61afef !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+.edgeever-code-card-btn.primary:hover {
+  background: #4fa1e2 !important;
+}
+
+.edgeever-code-card-btn.copied {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+

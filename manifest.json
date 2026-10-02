@@ -2,14 +2,14 @@
   "type": "plugin",
   "id": "org.edgeever.plugins.code-pro",
   "name": "Code Pro: Syntax Highlight & Beautifier",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "apiVersion": "2",
   "settingsUi": "host",
-  "description": "Professional code block beautification with standard syntax highlighting, full SAP ABAP support, Mac-style header bar, language badge with selector, code folding, pretty printer, in-block search, gradient auto-folding, line numbers, and quick copy.",
+  "description": "Professional code block beautification with standard syntax highlighting, full SAP ABAP support, Mac-style header bar, Ray.so code card exporter, line highlight & focus mode, pretty printer, in-block search, and quick copy.",
   "locales": {
     "zh-CN": {
       "name": "Code Pro: 代码高亮与代码块美化",
-      "description": "专业级代码块美化与语法高亮插件。原生适配 EdgeEver 编辑器，深度支持 SAP ABAP 全语法高亮，提供一键代码格式化 (Pretty Printer)、超长代码平滑渐变折叠、代码块内独立搜索、可点击切换语言的 Mac 窗口栏、行号展示与一键复制功能。"
+      "description": "专业级代码块美化与语法高亮插件。原生适配 EdgeEver 编辑器，深度支持 SAP ABAP 全语法高亮，提供 Ray.so 风格代码卡片一键导出复制、点击行号重点高亮与暗淡聚焦模式、一键代码格式化 (Pretty Printer)、超长代码平滑渐变折叠与代码块内独立搜索功能。"
     }
   },
   "author": "zyhcs",
@@ -28,6 +28,18 @@
         "key": "show_language_badge",
         "type": "boolean",
         "label": "显示代码语言指示徽标（支持点击切换）",
+        "default": true
+      },
+      {
+        "key": "show_card_button",
+        "type": "boolean",
+        "label": "显示生成 Ray.so 风格代码分享卡片按钮",
+        "default": true
+      },
+      {
+        "key": "enable_line_highlight",
+        "type": "boolean",
+        "label": "允许点击行号高亮重点行与暗淡聚焦模式",
         "default": true
       },
       {

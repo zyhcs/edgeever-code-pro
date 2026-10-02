@@ -2,7 +2,7 @@
  * EdgeEver Code Pro Plugin
  * 专业级语法高亮引擎与代码块美化器
  * 原生深度适配 EdgeEver 编辑器与全语法高亮
- * v1.0.5 - 支持 Pretty Printer 格式化、超长渐变折叠、代码块内独立搜索
+ * v1.0.6 - 支持 Ray.so 风格代码卡片一键导出复制、点击行号重点行高亮与暗淡聚焦模式
  */
 
 // ==================== 1. 专业级多语言高亮引擎 ====================
@@ -181,6 +181,23 @@ function highlightCode(code, lang) {
   return html;
 }
 
+/**
+ * 将高亮后的 HTML 代码按行包裹为支持独立重点高亮与对齐的 DOM 结构
+ */
+function wrapCodeInLines(highlightedHtml, highlightedLinesSet = new Set()) {
+  const lines = highlightedHtml.split(/\r?\n/);
+  return lines
+    .map((lineContent, index) => {
+      const lineNum = index + 1;
+      const isHighlighted = highlightedLinesSet.has(lineNum);
+      const content = lineContent || " ";
+      return `<div class="edgeever-code-line${
+        isHighlighted ? " is-highlighted" : ""
+      }" data-line="${lineNum}">${content}</div>`;
+    })
+    .join("");
+}
+
 // ==================== 2. Pretty Printer 格式化引擎 ====================
 function formatAbapCode(code) {
   const literals = [];
@@ -305,7 +322,6 @@ function formatCode(code, lang) {
   } else if (l === "sql") {
     return formatSqlCode(code);
   } else {
-    // 通用语言清理：去除行尾空格、统一换行、压缩连续空行
     return code
       .split(/\r?\n/)
       .map((line) => line.trimEnd())
@@ -317,7 +333,6 @@ function formatCode(code, lang) {
 
 // 跨平台健壮复制代码到剪贴板
 async function copyCodeToClipboard(text, block) {
-  // 1. EdgeEver 桌面端专用原生桥接（最高优先级）
   if (typeof window !== "undefined" && window.edgeeverDesktop?.copyText) {
     try {
       const ok = await window.edgeeverDesktop.copyText(text);
@@ -325,7 +340,6 @@ async function copyCodeToClipboard(text, block) {
     } catch (_) {}
   }
 
-  // 2. 尝试触发 EdgeEver 自带的原生复制按钮
   const nativeBtn = block?.querySelector(".edgeever-code-copy-button");
   if (nativeBtn) {
     try {
@@ -334,7 +348,6 @@ async function copyCodeToClipboard(text, block) {
     } catch (_) {}
   }
 
-  // 3. 浏览器 Clipboard API
   if (navigator.clipboard?.writeText) {
     try {
       await navigator.clipboard.writeText(text);
@@ -342,7 +355,6 @@ async function copyCodeToClipboard(text, block) {
     } catch (_) {}
   }
 
-  // 4. 标准 execCommand 离屏文本框兜底
   try {
     const ta = document.createElement("textarea");
     ta.value = text;
@@ -360,12 +372,285 @@ async function copyCodeToClipboard(text, block) {
   }
 }
 
-// ==================== 3. 插件主生命周期定义 ====================
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ==================== 3. Ray.so 风格代码卡片渲染与导出 ====================
+async function renderCardToCanvas(cardEl) {
+  const width = cardEl.offsetWidth || 680;
+  const height = cardEl.offsetHeight || 380;
+  const scale = 2; // 2x Retina 高清
+
+  const clone = cardEl.cloneNode(true);
+
+  // 内联导出核心样式确保跨上下文还原
+  const cssStyles = `
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    .edgeever-ray-card { padding: 36px 40px; border-radius: 16px; width: ${width}px; font-family: ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace; font-size: 13.5px; line-height: 1.62; position: relative; }
+    .edgeever-ray-card[data-gradient="aurora"] { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #ec4899 100%); }
+    .edgeever-ray-card[data-gradient="cyber"] { background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 50%, #6366f1 100%); }
+    .edgeever-ray-card[data-gradient="sunset"] { background: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%); }
+    .edgeever-ray-card[data-gradient="emerald"] { background: linear-gradient(135deg, #059669 0%, #10b981 50%, #06b6d4 100%); }
+    .edgeever-ray-card[data-gradient="dark"] { background: linear-gradient(135deg, #18181b 0%, #27272a 50%, #3f3f46 100%); }
+    .edgeever-ray-window { background: #21252b; border-radius: 10px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden; }
+    .edgeever-ray-header { height: 38px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; background: #1b1d23; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+    .edgeever-code-mac-dots { display: inline-flex; align-items: center; gap: 6px; }
+    .edgeever-code-dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+    .edgeever-code-dot.red { background: #ff5f56; }
+    .edgeever-code-dot.yellow { background: #ffbd2e; }
+    .edgeever-code-dot.green { background: #27c93f; }
+    .edgeever-ray-lang-badge { font-size: 11px; font-weight: 700; color: #94a3b8; background: rgba(255, 255, 255, 0.08); padding: 2px 7px; border-radius: 4px; text-transform: uppercase; }
+    .edgeever-ray-body { display: flex; padding: 14px 16px; color: #abb2bf; position: relative; }
+    .edgeever-ray-gutter { text-align: right; padding-right: 14px; color: #5c6370; user-select: none; border-right: 1px solid rgba(255, 255, 255, 0.08); margin-right: 14px; font-size: 13.5px; }
+    .edgeever-ray-gutter-num { height: 1.62em; line-height: 1.62em; }
+    .edgeever-ray-code { flex: 1; margin: 0; white-space: pre; font-size: 13.5px; font-family: inherit; }
+    .edgeever-code-line { height: 1.62em; line-height: 1.62em; border-radius: 2px; }
+    .edgeever-code-line.is-highlighted { background: rgba(97, 175, 239, 0.22); border-left: 3px solid #61afef; padding-left: 4px; }
+    .has-line-focus .edgeever-code-line:not(.is-highlighted) { opacity: 0.38; }
+    .edgeever-ray-watermark { text-align: right; font-size: 11px; font-weight: 600; color: rgba(255, 255, 255, 0.45); margin-top: 12px; letter-spacing: 0.5px; }
+    .token.keyword, .hljs-keyword { color: #c678dd; font-weight: 600; }
+    .token.function, .hljs-built_in { color: #61afef; }
+    .token.string, .hljs-string { color: #98c379; }
+    .token.comment, .hljs-comment { color: #5c6370; font-style: italic; }
+    .token.number, .hljs-number { color: #d19a66; }
+    .token.abap-system-var, .hljs-variable { color: #e06c75; font-weight: 600; }
+    .token.operator, .hljs-operator { color: #56b6c2; }
+  `;
+
+  const svgString = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+      <foreignObject width="100%" height="100%">
+        <div xmlns="http://www.w3.org/1999/xhtml">
+          <style>${cssStyles}</style>
+          ${clone.outerHTML}
+        </div>
+      </foreignObject>
+    </svg>
+  `;
+
+  const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(svgBlob);
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = width * scale;
+      canvas.height = height * scale;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(scale, scale);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      resolve(canvas);
+    };
+    img.onerror = (e) => {
+      URL.revokeObjectURL(url);
+      reject(e);
+    };
+    img.src = url;
+  });
+}
+
+function openRayCodeCardModal(block, detectedLang, langLabel, context) {
+  const existing = document.querySelector(".edgeever-code-card-modal-backdrop");
+  if (existing) existing.remove();
+
+  const sourceEl = block.querySelector(".edgeever-code-source") || block.querySelector("code") || block;
+  const rawCode = block.dataset.originalRawCode || sourceEl.innerText || sourceEl.textContent || "";
+  const lines = rawCode.split(/\r?\n/);
+  const linesCount = lines.length;
+  const highlightedSet = block._highlightedLines || new Set();
+
+  // 高亮代码并按行构建
+  const rawHighlighted = highlightCode(rawCode, detectedLang);
+  const codeLinesHtml = wrapCodeInLines(rawHighlighted, highlightedSet);
+
+  let gutterHtml = "";
+  for (let i = 1; i <= linesCount; i++) {
+    gutterHtml += `<div class="edgeever-ray-gutter-num">${i}</div>`;
+  }
+
+  const backdrop = document.createElement("div");
+  backdrop.className = "edgeever-code-card-modal-backdrop";
+
+  backdrop.innerHTML = `
+    <div class="edgeever-code-card-modal">
+      <div class="edgeever-code-card-modal-header">
+        <div class="edgeever-code-card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          <span>代码卡片导出 (Ray.so 风格)</span>
+        </div>
+        <div class="edgeever-code-card-controls">
+          <span class="edgeever-code-card-label">背景渐变：</span>
+          <div class="edgeever-code-gradient-picker">
+            <span class="gradient-dot active" data-gradient="aurora" title="极光紫" style="background: linear-gradient(135deg, #4f46e5, #7c3aed, #ec4899);"></span>
+            <span class="gradient-dot" data-gradient="cyber" title="科技蓝" style="background: linear-gradient(135deg, #0ea5e9, #3b82f6, #6366f1);"></span>
+            <span class="gradient-dot" data-gradient="sunset" title="落日暖橙" style="background: linear-gradient(135deg, #f59e0b, #ef4444, #ec4899);"></span>
+            <span class="gradient-dot" data-gradient="emerald" title="翡翠绿" style="background: linear-gradient(135deg, #059669, #10b981, #06b6d4);"></span>
+            <span class="gradient-dot" data-gradient="dark" title="黑曜石" style="background: linear-gradient(135deg, #18181b, #27272a, #3f3f46);"></span>
+          </div>
+          <label class="edgeever-code-card-checkbox">
+            <input type="checkbox" id="rayCardShowLines" checked>
+            <span>显示行号</span>
+          </label>
+        </div>
+        <button type="button" class="edgeever-code-card-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
+
+      <div class="edgeever-code-card-preview-viewport">
+        <div class="edgeever-ray-card${highlightedSet.size > 0 ? " has-line-focus" : ""}" id="rayCardNode" data-gradient="aurora">
+          <div class="edgeever-ray-window">
+            <div class="edgeever-ray-header">
+              <div class="edgeever-code-mac-dots">
+                <span class="edgeever-code-dot red"></span>
+                <span class="edgeever-code-dot yellow"></span>
+                <span class="edgeever-code-dot green"></span>
+              </div>
+              <div class="edgeever-ray-lang-badge">${langLabel}</div>
+            </div>
+            <div class="edgeever-ray-body">
+              <div class="edgeever-ray-gutter" id="rayCardGutter">${gutterHtml}</div>
+              <div class="edgeever-ray-code">${codeLinesHtml}</div>
+            </div>
+          </div>
+          <div class="edgeever-ray-watermark">EdgeEver Code Pro</div>
+        </div>
+      </div>
+
+      <div class="edgeever-code-card-modal-footer">
+        <span class="edgeever-code-card-tip">支持导出视网膜 2x 高清图，一键粘贴到微信、飞书或文档中</span>
+        <div class="edgeever-code-card-footer-btns">
+          <button type="button" class="edgeever-code-card-btn copy-card-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1"></path></svg>
+            <span>复制图片到剪贴板</span>
+          </button>
+          <button type="button" class="edgeever-code-card-btn download-card-btn primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <span>下载 PNG 图片</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(backdrop);
+
+  const cardNode = backdrop.querySelector("#rayCardNode");
+  const gutterNode = backdrop.querySelector("#rayCardGutter");
+  const showLinesCheck = backdrop.querySelector("#rayCardShowLines");
+  const copyBtn = backdrop.querySelector(".copy-card-btn");
+  const downloadBtn = backdrop.querySelector(".download-card-btn");
+  const closeBtn = backdrop.querySelector(".edgeever-code-card-modal-close");
+
+  // 渐变背景切换
+  backdrop.querySelectorAll(".gradient-dot").forEach((dot) => {
+    dot.onclick = () => {
+      backdrop.querySelectorAll(".gradient-dot").forEach((d) => d.classList.remove("active"));
+      dot.classList.add("active");
+      cardNode.setAttribute("data-gradient", dot.dataset.gradient);
+    };
+  });
+
+  // 行号显隐切换
+  showLinesCheck.onchange = () => {
+    gutterNode.style.display = showLinesCheck.checked ? "block" : "none";
+  };
+
+  // 关闭弹窗
+  function closeModal() {
+    backdrop.remove();
+    document.removeEventListener("keydown", handleKeydown);
+  }
+
+  function handleKeydown(e) {
+    if (e.key === "Escape") closeModal();
+  }
+
+  closeBtn.onclick = closeModal;
+  backdrop.onclick = (e) => {
+    if (e.target === backdrop) closeModal();
+  };
+  document.addEventListener("keydown", handleKeydown);
+
+  // 复制图片到剪贴板
+  copyBtn.onclick = async () => {
+    try {
+      copyBtn.querySelector("span").textContent = "正在生成...";
+      const canvas = await renderCardToCanvas(cardNode);
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          context.ui?.showNotice?.("生成图片失败，请重试！");
+          copyBtn.querySelector("span").textContent = "复制图片到剪贴板";
+          return;
+        }
+        let copied = false;
+        try {
+          if (navigator.clipboard?.write) {
+            const item = new ClipboardItem({ "image/png": blob });
+            await navigator.clipboard.write([item]);
+            copied = true;
+          }
+        } catch (_) {}
+
+        if (copied) {
+          copyBtn.classList.add("copied");
+          copyBtn.querySelector("span").textContent = "已复制图片 ✓";
+          context.ui?.showNotice?.("Ray.so 风格代码卡片已复制到剪贴板！");
+          setTimeout(() => {
+            copyBtn.classList.remove("copied");
+            copyBtn.querySelector("span").textContent = "复制图片到剪贴板";
+          }, 2000);
+        } else {
+          // 兜底直接触发下载
+          downloadBlob(blob, `code-card-${Date.now()}.png`);
+          context.ui?.showNotice?.("已为您生成并自动下载卡片图片！");
+          copyBtn.querySelector("span").textContent = "复制图片到剪贴板";
+        }
+      }, "image/png");
+    } catch (err) {
+      console.error("Card render error:", err);
+      context.ui?.showNotice?.("生成图片失败，请重试！");
+      copyBtn.querySelector("span").textContent = "复制图片到剪贴板";
+    }
+  };
+
+  // 下载 PNG 图片
+  downloadBtn.onclick = async () => {
+    try {
+      downloadBtn.querySelector("span").textContent = "正在生成...";
+      const canvas = await renderCardToCanvas(cardNode);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          downloadBlob(blob, `code-card-${Date.now()}.png`);
+          context.ui?.showNotice?.("代码卡片下载成功！");
+        }
+        downloadBtn.querySelector("span").textContent = "下载 PNG 图片";
+      }, "image/png");
+    } catch (err) {
+      console.error("Card render error:", err);
+      context.ui?.showNotice?.("生成图片失败，请重试！");
+      downloadBtn.querySelector("span").textContent = "下载 PNG 图片";
+    }
+  };
+}
+
+// ==================== 4. 插件主生命周期定义 ====================
 export default {
   async activate(context) {
     const settings = {
       showMacDots: true,
       showLanguageBadge: true,
+      showCardButton: true,
+      enableLineHighlight: true,
       showFormatButton: true,
       showSearchButton: true,
       showCollapseButton: true,
@@ -381,6 +666,8 @@ export default {
       try {
         const dots = await context.settings.get("show_mac_dots");
         const lang = await context.settings.get("show_language_badge");
+        const card = await context.settings.get("show_card_button");
+        const lineHl = await context.settings.get("enable_line_highlight");
         const format = await context.settings.get("show_format_button");
         const search = await context.settings.get("show_search_button");
         const collapse = await context.settings.get("show_collapse_button");
@@ -393,6 +680,8 @@ export default {
 
         if (dots !== null) settings.showMacDots = dots;
         if (lang !== null) settings.showLanguageBadge = lang;
+        if (card !== null) settings.showCardButton = card;
+        if (lineHl !== null) settings.enableLineHighlight = lineHl;
         if (format !== null) settings.showFormatButton = format;
         if (search !== null) settings.showSearchButton = search;
         if (collapse !== null) settings.showCollapseButton = collapse;
@@ -514,6 +803,34 @@ export default {
       delete block.dataset.codeProProcessed;
       delete block.dataset.originalRawCode;
       beautifyCodeBlock(block, true);
+    }
+
+    /**
+     * 切换某一行的高亮与暗淡聚焦模式
+     */
+    function toggleLineHighlight(block, lineNum) {
+      if (!block._highlightedLines) {
+        block._highlightedLines = new Set();
+      }
+      const set = block._highlightedLines;
+      if (set.has(lineNum)) {
+        set.delete(lineNum);
+      } else {
+        set.add(lineNum);
+      }
+
+      const hasFocus = set.size > 0;
+      block.classList.toggle("has-line-focus", hasFocus);
+
+      block.querySelectorAll(".edgeever-code-line").forEach((el) => {
+        const n = Number(el.dataset.line);
+        el.classList.toggle("is-highlighted", set.has(n));
+      });
+
+      block.querySelectorAll(".edgeever-code-line-number").forEach((el) => {
+        const n = Number(el.dataset.line);
+        el.classList.toggle("is-active-line-num", set.has(n));
+      });
     }
 
     /**
@@ -665,7 +982,29 @@ export default {
       const right = document.createElement("div");
       right.className = "edgeever-code-pro-right";
 
-      // 1) 一键格式化 Pretty Printer 按钮
+      // 1) Ray.so 风格代码卡片导出按钮
+      if (settings.showCardButton) {
+        const cardBtn = document.createElement("button");
+        cardBtn.className = "edgeever-code-tool-btn edgeever-code-snap-btn";
+        cardBtn.type = "button";
+        cardBtn.setAttribute("contenteditable", "false");
+        cardBtn.title = "生成 Ray.so 风格代码分享卡片";
+        cardBtn.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+          <span>卡片</span>
+        `;
+        cardBtn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openRayCodeCardModal(block, detectedLang, matchedLang.label, context);
+        };
+        right.appendChild(cardBtn);
+      }
+
+      // 2) 一键格式化 Pretty Printer 按钮
       if (settings.showFormatButton) {
         const formatBtn = document.createElement("button");
         formatBtn.className = "edgeever-code-tool-btn edgeever-code-format-btn";
@@ -698,7 +1037,7 @@ export default {
         right.appendChild(formatBtn);
       }
 
-      // 2) 代码块内独立搜索按钮与搜索面板
+      // 3) 代码块内独立搜索按钮与搜索面板
       let searchBar = block.querySelector(".edgeever-code-search-bar");
       if (!searchBar) {
         searchBar = document.createElement("div");
@@ -741,13 +1080,13 @@ export default {
           searchMatchesCount = 0;
           searchCurrentIdx = 0;
           searchCount.textContent = "0/0";
-          sourceEl.innerHTML = highlightCode(text, detectedLang);
+          const hl = highlightCode(text, detectedLang);
+          sourceEl.innerHTML = wrapCodeInLines(hl, block._highlightedLines || new Set());
           return;
         }
 
         const safeQuery = escapeRegex(query);
         const re = new RegExp(safeQuery, "gi");
-        const parts = [];
         let cursor = 0;
         let match;
         const hitIndexes = [];
@@ -760,7 +1099,8 @@ export default {
         if (searchMatchesCount === 0) {
           searchCurrentIdx = 0;
           searchCount.textContent = "0/0";
-          sourceEl.innerHTML = highlightCode(text, detectedLang);
+          const hl = highlightCode(text, detectedLang);
+          sourceEl.innerHTML = wrapCodeInLines(hl, block._highlightedLines || new Set());
           return;
         }
 
@@ -784,7 +1124,7 @@ export default {
         if (cursor < text.length) {
           highlightedHtml += escapeHtml(text.slice(cursor));
         }
-        sourceEl.innerHTML = highlightedHtml;
+        sourceEl.innerHTML = wrapCodeInLines(highlightedHtml, block._highlightedLines || new Set());
 
         const currentMark = sourceEl.querySelector(".edgeever-code-search-current");
         if (currentMark) {
@@ -802,7 +1142,8 @@ export default {
         block.classList.remove("has-search-open");
         searchInput.value = "";
         const text = block.dataset.originalRawCode || sourceEl.innerText || sourceEl.textContent || "";
-        sourceEl.innerHTML = highlightCode(text, detectedLang);
+        const hl = highlightCode(text, detectedLang);
+        sourceEl.innerHTML = wrapCodeInLines(hl, block._highlightedLines || new Set());
       }
 
       searchInput.oninput = () => {
@@ -853,11 +1194,9 @@ export default {
           e.stopPropagation();
           const isOpen = block.classList.toggle("has-search-open");
           if (isOpen) {
-            // 如果原本是完全折叠状态，先自动展开
             if (block.classList.contains("is-collapsed")) {
               toggleCollapse();
             }
-            // 如果原本超长折叠，自动展开以便阅读搜索命中
             if (block.classList.contains("is-overflow-collapsed")) {
               block.classList.remove("is-overflow-collapsed");
               block.dataset.userExpanded = "true";
@@ -904,7 +1243,7 @@ export default {
         }
       }
 
-      // 3) 折叠/展开按钮
+      // 4) 折叠/展开按钮
       if (settings.showCollapseButton) {
         collapseBtn = document.createElement("button");
         collapseBtn.className = "edgeever-code-tool-btn edgeever-code-collapse-btn";
@@ -932,7 +1271,7 @@ export default {
         right.appendChild(collapseBtn);
       }
 
-      // 4) 复制按钮（全面对接桌面端与网页端剪贴板）
+      // 5) 复制按钮（全面对接桌面端与网页端剪贴板）
       if (settings.showCopyButton) {
         const copyBtn = document.createElement("button");
         copyBtn.className = "edgeever-code-tool-btn edgeever-code-copy-btn";
@@ -965,9 +1304,11 @@ export default {
 
       toolbar.appendChild(right);
 
-      // 4. 行号槽管理
+      // 4. 行号槽管理与重点行高亮点击
       let existingGutter = block.querySelector(".edgeever-code-line-numbers");
       if (existingGutter) existingGutter.remove();
+
+      const highlightedSet = block._highlightedLines || new Set();
 
       if (settings.showLineNumbers && linesCount > 1) {
         block.classList.add("has-line-numbers");
@@ -975,11 +1316,21 @@ export default {
         lineNumbers.className = "edgeever-code-line-numbers";
         lineNumbers.setAttribute("contenteditable", "false");
         lineNumbers.setAttribute("aria-hidden", "true");
-        let numbersHtml = "";
+
         for (let num = 1; num <= linesCount; num++) {
-          numbersHtml += `<span class="edgeever-code-line-number">${num}</span>`;
+          const numSpan = document.createElement("span");
+          numSpan.className = `edgeever-code-line-number${highlightedSet.has(num) ? " is-active-line-num" : ""}`;
+          numSpan.textContent = num;
+          numSpan.dataset.line = String(num);
+          if (settings.enableLineHighlight) {
+            numSpan.title = "点击切换此行高亮聚焦";
+            numSpan.onclick = (e) => {
+              e.stopPropagation();
+              toggleLineHighlight(block, num);
+            };
+          }
+          lineNumbers.appendChild(numSpan);
         }
-        lineNumbers.innerHTML = numbersHtml;
         block.insertBefore(lineNumbers, sourceEl);
       } else {
         block.classList.remove("has-line-numbers");
@@ -990,7 +1341,10 @@ export default {
       if (!isEditing && !block.classList.contains("has-search-open")) {
         const langKey = GRAMMARS[detectedLang] ? detectedLang : detectedLang === "abap" ? "abap" : null;
         if (langKey) {
-          sourceEl.innerHTML = highlightCode(rawText, langKey);
+          const rawHl = highlightCode(rawText, langKey);
+          sourceEl.innerHTML = wrapCodeInLines(rawHl, highlightedSet);
+        } else {
+          sourceEl.innerHTML = wrapCodeInLines(escapeHtml(rawText), highlightedSet);
         }
       }
 
@@ -1052,7 +1406,7 @@ export default {
         el.querySelector(".edgeever-code-search-bar")?.remove();
         el.querySelector(".edgeever-code-line-numbers")?.remove();
         el.querySelector(".edgeever-code-fold-mask")?.remove();
-        el.classList.remove("has-line-numbers", "is-overflow-collapsed", "has-search-open");
+        el.classList.remove("has-line-numbers", "is-overflow-collapsed", "has-search-open", "has-line-focus");
       });
       processAllCodeBlocks();
     }
@@ -1090,6 +1444,7 @@ export default {
     // 卸载与清理
     return () => {
       observer.disconnect();
+      document.querySelectorAll(".edgeever-code-card-modal-backdrop").forEach((m) => m.remove());
       document.querySelectorAll(".edgeever-code-pro-toolbar").forEach((b) => b.remove());
       document.querySelectorAll(".edgeever-code-search-bar").forEach((b) => b.remove());
       document.querySelectorAll(".edgeever-code-line-numbers").forEach((g) => g.remove());
@@ -1098,12 +1453,14 @@ export default {
         delete p.dataset.codeProProcessed;
         delete p.dataset.userExpanded;
         delete p.dataset.originalRawCode;
+        delete p._highlightedLines;
         p.classList.remove(
           "edgeever-code-pro-block",
           "has-line-numbers",
           "is-collapsed",
           "is-overflow-collapsed",
           "has-search-open",
+          "has-line-focus",
           "edgeever-theme-one-dark",
           "edgeever-theme-github-dark",
           "edgeever-theme-tokyo-night",
