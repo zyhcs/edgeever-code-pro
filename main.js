@@ -700,55 +700,69 @@ function openRayCodeCardModal(block, detectedLang, langLabel, context, settings 
 
   backdrop.innerHTML = `
     <div class="edgeever-code-card-modal">
-      <div class="edgeever-code-card-modal-header">
+      <!-- 顶层：标题栏与关闭按钮 -->
+      <div class="edgeever-code-card-modal-topbar">
         <div class="edgeever-code-card-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
           <span>代码卡片导出 (Ray.so 风格)</span>
         </div>
-        <div class="edgeever-code-card-controls">
-          <!-- 背景色 -->
-          <div class="edgeever-code-card-control-item">
-            <span class="edgeever-code-card-label">背景：</span>
-            <div class="edgeever-code-gradient-picker">
-              <span class="gradient-dot active" data-gradient="aurora" title="极光紫" style="background: linear-gradient(135deg, #4f46e5, #7c3aed, #ec4899);"></span>
-              <span class="gradient-dot" data-gradient="cyber" title="科技蓝" style="background: linear-gradient(135deg, #0ea5e9, #3b82f6, #6366f1);"></span>
-              <span class="gradient-dot" data-gradient="sunset" title="落日暖橙" style="background: linear-gradient(135deg, #f59e0b, #ef4444, #ec4899);"></span>
-              <span class="gradient-dot" data-gradient="emerald" title="翡翠绿" style="background: linear-gradient(135deg, #059669, #10b981, #06b6d4);"></span>
-              <span class="gradient-dot" data-gradient="dark" title="黑曜石" style="background: linear-gradient(135deg, #18181b, #27272a, #3f3f46);"></span>
-            </div>
-          </div>
+        <button type="button" class="edgeever-code-card-modal-close" title="关闭 (Esc)">✕</button>
+      </div>
 
-          <!-- 间距 Padding -->
-          <div class="edgeever-code-card-control-item">
-            <span class="edgeever-code-card-label">边距：</span>
-            <div class="edgeever-code-card-segment" id="cardPaddingSegment">
-              <button type="button" class="edgeever-code-card-segment-btn${currentPadding === "16" ? " active" : ""}" data-val="16">16px</button>
-              <button type="button" class="edgeever-code-card-segment-btn${currentPadding === "36" ? " active" : ""}" data-val="36">36px</button>
-              <button type="button" class="edgeever-code-card-segment-btn${currentPadding === "56" ? " active" : ""}" data-val="56">56px</button>
-            </div>
+      <!-- 独立参数工具栏：横向一行展开，各组清晰分割，不挤压 -->
+      <div class="edgeever-code-card-toolbar">
+        <!-- 1. 背景色 -->
+        <div class="edgeever-code-card-control-item">
+          <span class="edgeever-code-card-label">背景</span>
+          <div class="edgeever-code-gradient-picker">
+            <span class="gradient-dot active" data-gradient="aurora" title="极光紫" style="background: linear-gradient(135deg, #4f46e5, #7c3aed, #ec4899);"></span>
+            <span class="gradient-dot" data-gradient="cyber" title="科技蓝" style="background: linear-gradient(135deg, #0ea5e9, #3b82f6, #6366f1);"></span>
+            <span class="gradient-dot" data-gradient="sunset" title="落日暖橙" style="background: linear-gradient(135deg, #f59e0b, #ef4444, #ec4899);"></span>
+            <span class="gradient-dot" data-gradient="emerald" title="翡翠绿" style="background: linear-gradient(135deg, #059669, #10b981, #06b6d4);"></span>
+            <span class="gradient-dot" data-gradient="dark" title="黑曜石" style="background: linear-gradient(135deg, #18181b, #27272a, #3f3f46);"></span>
           </div>
+        </div>
 
-          <!-- 字号 Font Size -->
-          <div class="edgeever-code-card-control-item">
-            <span class="edgeever-code-card-label">字号：</span>
-            <div class="edgeever-code-card-segment" id="cardFontSizeSegment">
-              <button type="button" class="edgeever-code-card-segment-btn${currentFontSize === "12" ? " active" : ""}" data-val="12">小号</button>
-              <button type="button" class="edgeever-code-card-segment-btn${currentFontSize === "13.5" ? " active" : ""}" data-val="13.5">标准</button>
-              <button type="button" class="edgeever-code-card-segment-btn${currentFontSize === "15" ? " active" : ""}" data-val="15">大号</button>
-            </div>
+        <div class="edgeever-code-card-divider"></div>
+
+        <!-- 2. 间距 Padding -->
+        <div class="edgeever-code-card-control-item">
+          <span class="edgeever-code-card-label">边距</span>
+          <div class="edgeever-code-card-segment" id="cardPaddingSegment">
+            <button type="button" class="edgeever-code-card-segment-btn${currentPadding === "16" ? " active" : ""}" data-val="16">16px</button>
+            <button type="button" class="edgeever-code-card-segment-btn${currentPadding === "36" ? " active" : ""}" data-val="36">36px</button>
+            <button type="button" class="edgeever-code-card-segment-btn${currentPadding === "56" ? " active" : ""}" data-val="56">56px</button>
           </div>
+        </div>
 
-          <!-- 清晰度 Scale -->
-          <div class="edgeever-code-card-control-item">
-            <span class="edgeever-code-card-label">倍率：</span>
-            <div class="edgeever-code-card-segment" id="cardScaleSegment">
-              <button type="button" class="edgeever-code-card-segment-btn${currentScale === "1" ? " active" : ""}" data-val="1">1x</button>
-              <button type="button" class="edgeever-code-card-segment-btn${currentScale === "2" ? " active" : ""}" data-val="2">2x 高清</button>
-              <button type="button" class="edgeever-code-card-segment-btn${currentScale === "3" ? " active" : ""}" data-val="3">3x 极清</button>
-            </div>
+        <div class="edgeever-code-card-divider"></div>
+
+        <!-- 3. 字号 Font Size -->
+        <div class="edgeever-code-card-control-item">
+          <span class="edgeever-code-card-label">字号</span>
+          <div class="edgeever-code-card-segment" id="cardFontSizeSegment">
+            <button type="button" class="edgeever-code-card-segment-btn${currentFontSize === "12" ? " active" : ""}" data-val="12">12px</button>
+            <button type="button" class="edgeever-code-card-segment-btn${currentFontSize === "13.5" ? " active" : ""}" data-val="13.5">13.5px</button>
+            <button type="button" class="edgeever-code-card-segment-btn${currentFontSize === "15" ? " active" : ""}" data-val="15">15px</button>
           </div>
+        </div>
 
-          <!-- 开关项 -->
+        <div class="edgeever-code-card-divider"></div>
+
+        <!-- 4. 清晰度 Scale -->
+        <div class="edgeever-code-card-control-item">
+          <span class="edgeever-code-card-label">倍率</span>
+          <div class="edgeever-code-card-segment" id="cardScaleSegment">
+            <button type="button" class="edgeever-code-card-segment-btn${currentScale === "1" ? " active" : ""}" data-val="1">1x</button>
+            <button type="button" class="edgeever-code-card-segment-btn${currentScale === "2" ? " active" : ""}" data-val="2">2x</button>
+            <button type="button" class="edgeever-code-card-segment-btn${currentScale === "3" ? " active" : ""}" data-val="3">3x</button>
+          </div>
+        </div>
+
+        <div class="edgeever-code-card-divider"></div>
+
+        <!-- 5. 开关项 -->
+        <div class="edgeever-code-card-control-item">
           <label class="edgeever-code-card-checkbox" title="是否在卡片中显示代码行号">
             <input type="checkbox" id="rayCardShowLines" checked>
             <span>行号</span>
@@ -758,7 +772,6 @@ function openRayCodeCardModal(block, detectedLang, langLabel, context, settings 
             <span>阴影</span>
           </label>
         </div>
-        <button type="button" class="edgeever-code-card-modal-close" title="关闭 (Esc)">✕</button>
       </div>
 
       <div class="edgeever-code-card-preview-viewport">

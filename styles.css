@@ -817,7 +817,7 @@ mark.edgeever-code-search-current {
 
 .edgeever-code-card-modal {
   width: 100% !important;
-  max-width: 860px !important;
+  max-width: 940px !important;
   max-height: 90vh !important;
   background: #181a20 !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -829,13 +829,14 @@ mark.edgeever-code-search-current {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
-.edgeever-code-card-modal-header {
-  height: 52px !important;
-  padding: 0 20px !important;
+/* 顶部第一层：纤薄标题栏与关闭按钮 */
+.edgeever-code-card-modal-topbar {
+  height: 40px !important;
+  padding: 0 16px 0 18px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
   background: rgba(255, 255, 255, 0.02) !important;
   user-select: none !important;
 }
@@ -844,28 +845,47 @@ mark.edgeever-code-search-current {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  font-size: 13.5px !important;
+  font-size: 13px !important;
   font-weight: 600 !important;
   color: #f1f5f9 !important;
 }
 
-.edgeever-code-card-controls {
+/* 顶部第二层：独立宽敞的参数调节工具栏 */
+.edgeever-code-card-toolbar {
+  min-height: 48px !important;
+  padding: 8px 18px !important;
   display: flex !important;
   align-items: center !important;
-  gap: 14px !important;
-  flex-wrap: wrap !important;
+  justify-content: flex-start !important;
+  gap: 12px !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(20, 22, 28, 0.96) !important;
+  user-select: none !important;
+}
+
+/* 模块间垂直弱分割线 */
+.edgeever-code-card-divider {
+  width: 1px !important;
+  height: 18px !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  margin: 0 2px !important;
+  flex-shrink: 0 !important;
 }
 
 .edgeever-code-card-control-item {
   display: flex !important;
   align-items: center !important;
   gap: 6px !important;
+  flex-shrink: 0 !important;
 }
 
 .edgeever-code-card-label {
   font-size: 11.5px !important;
   font-weight: 500 !important;
   color: #94a3b8 !important;
+  flex-shrink: 0 !important;
 }
 
 /* 胶囊分段按钮组 (Segmented Control) */

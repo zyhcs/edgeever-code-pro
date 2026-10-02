@@ -2,7 +2,7 @@
   "type": "plugin",
   "id": "org.edgeever.plugins.code-pro",
   "name": "Code Pro: Syntax Highlight & Beautifier",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "apiVersion": "2",
   "settingsUi": "host",
   "description": "Professional code block beautification with standard syntax highlighting, full SAP ABAP support, Mac-style header bar, highly customizable Ray.so code card exporter (font size, padding, resolution), line highlight & focus mode, pretty printer, in-block search, and quick copy.",
