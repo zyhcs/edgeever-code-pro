@@ -383,81 +383,278 @@ function downloadBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-// ==================== 3. Ray.so 风格代码卡片渲染与导出 ====================
-async function renderCardToCanvas(cardEl) {
-  const width = cardEl.offsetWidth || 680;
-  const height = cardEl.offsetHeight || 380;
-  const scale = 2; // 2x Retina 高清
+// ==================== 3. Ray.so 风格代码卡片纯 Canvas 2D 高保真渲染引擎 ====================
+function drawRoundedRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
 
-  const clone = cardEl.cloneNode(true);
+function extractTokensFromLine(lineEl) {
+  const tokens = [];
+  function walk(node) {
+    if (node.nodeType === 3) {
+      if (node.nodeValue) {
+        tokens.push({ text: node.nodeValue, color: "#abb2bf" });
+      }
+    } else if (node.nodeType === 1) {
+      const cls = node.className || "";
+      let color = "#abb2bf";
+      if (cls.includes("keyword")) color = "#c678dd";
+      else if (cls.includes("function") || cls.includes("built_in")) color = "#61afef";
+      else if (cls.includes("string")) color = "#98c379";
+      else if (cls.includes("comment")) color = "#5c6370";
+      else if (cls.includes("number")) color = "#d19a66";
+      else if (cls.includes("system-var") || cls.includes("variable")) color = "#e06c75";
+      else if (cls.includes("operator")) color = "#56b6c2";
+      else if (cls.includes("type")) color = "#e5c07b";
 
-  // 内联导出核心样式确保跨上下文还原
-  const cssStyles = `
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    .edgeever-ray-card { padding: 36px 40px; border-radius: 16px; width: ${width}px; font-family: ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace; font-size: 13.5px; line-height: 1.62; position: relative; }
-    .edgeever-ray-card[data-gradient="aurora"] { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #ec4899 100%); }
-    .edgeever-ray-card[data-gradient="cyber"] { background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 50%, #6366f1 100%); }
-    .edgeever-ray-card[data-gradient="sunset"] { background: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%); }
-    .edgeever-ray-card[data-gradient="emerald"] { background: linear-gradient(135deg, #059669 0%, #10b981 50%, #06b6d4 100%); }
-    .edgeever-ray-card[data-gradient="dark"] { background: linear-gradient(135deg, #18181b 0%, #27272a 50%, #3f3f46 100%); }
-    .edgeever-ray-window { background: #21252b; border-radius: 10px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden; }
-    .edgeever-ray-header { height: 38px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; background: #1b1d23; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
-    .edgeever-code-mac-dots { display: inline-flex; align-items: center; gap: 6px; }
-    .edgeever-code-dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
-    .edgeever-code-dot.red { background: #ff5f56; }
-    .edgeever-code-dot.yellow { background: #ffbd2e; }
-    .edgeever-code-dot.green { background: #27c93f; }
-    .edgeever-ray-lang-badge { font-size: 11px; font-weight: 700; color: #94a3b8; background: rgba(255, 255, 255, 0.08); padding: 2px 7px; border-radius: 4px; text-transform: uppercase; }
-    .edgeever-ray-body { display: flex; padding: 14px 16px; color: #abb2bf; position: relative; }
-    .edgeever-ray-gutter { text-align: right; padding-right: 14px; color: #5c6370; user-select: none; border-right: 1px solid rgba(255, 255, 255, 0.08); margin-right: 14px; font-size: 13.5px; }
-    .edgeever-ray-gutter-num { height: 1.62em; line-height: 1.62em; }
-    .edgeever-ray-code { flex: 1; margin: 0; white-space: pre; font-size: 13.5px; font-family: inherit; }
-    .edgeever-code-line { height: 1.62em; line-height: 1.62em; border-radius: 2px; }
-    .edgeever-code-line.is-highlighted { background: rgba(97, 175, 239, 0.22); border-left: 3px solid #61afef; padding-left: 4px; }
-    .has-line-focus .edgeever-code-line:not(.is-highlighted) { opacity: 0.38; }
-    .edgeever-ray-watermark { text-align: right; font-size: 11px; font-weight: 600; color: rgba(255, 255, 255, 0.45); margin-top: 12px; letter-spacing: 0.5px; }
-    .token.keyword, .hljs-keyword { color: #c678dd; font-weight: 600; }
-    .token.function, .hljs-built_in { color: #61afef; }
-    .token.string, .hljs-string { color: #98c379; }
-    .token.comment, .hljs-comment { color: #5c6370; font-style: italic; }
-    .token.number, .hljs-number { color: #d19a66; }
-    .token.abap-system-var, .hljs-variable { color: #e06c75; font-weight: 600; }
-    .token.operator, .hljs-operator { color: #56b6c2; }
-  `;
+      for (let i = 0; i < node.childNodes.length; i++) {
+        const child = node.childNodes[i];
+        if (child.nodeType === 3) {
+          tokens.push({ text: child.nodeValue, color });
+        } else {
+          walk(child);
+        }
+      }
+    }
+  }
+  walk(lineEl);
+  return tokens;
+}
 
-  const svgString = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-      <foreignObject width="100%" height="100%">
-        <div xmlns="http://www.w3.org/1999/xhtml">
-          <style>${cssStyles}</style>
-          ${clone.outerHTML}
-        </div>
-      </foreignObject>
-    </svg>
-  `;
+function renderRayCardToCanvas(cardNode, options = {}) {
+  const gradientName = cardNode.getAttribute("data-gradient") || "aurora";
+  const showLineNumbers = options.showLineNumbers !== false;
+  const langLabel = options.langLabel || "CODE";
+  const highlightedSet = options.highlightedSet || new Set();
 
-  const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
-  const url = URL.createObjectURL(svgBlob);
+  const lineEls = Array.from(cardNode.querySelectorAll(".edgeever-code-line"));
+  const linesCount = lineEls.length;
 
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = width * scale;
-      canvas.height = height * scale;
-      const ctx = canvas.getContext("2d");
-      ctx.scale(scale, scale);
-      ctx.drawImage(img, 0, 0);
-      URL.revokeObjectURL(url);
-      resolve(canvas);
-    };
-    img.onerror = (e) => {
-      URL.revokeObjectURL(url);
-      reject(e);
-    };
-    img.src = url;
+  // 基础参数配置
+  const scale = 2; // 2x Retina 高清输出
+  const cardPadX = 40;
+  const cardPadY = 36;
+  const headerHeight = 38;
+  const winPadTop = 16;
+  const winPadBottom = 16;
+  const winPadX = 20;
+  const gutterWidth = showLineNumbers ? 42 : 0;
+  const lineHeight = 22;
+  const font = '13.5px ui-monospace, "JetBrains Mono", Menlo, Monaco, Consolas, monospace';
+
+  // 测量最长的一行代码宽度
+  const measureCanvas = document.createElement("canvas");
+  const mCtx = measureCanvas.getContext("2d");
+  mCtx.font = font;
+
+  let maxTextWidth = 320;
+  lineEls.forEach((lineEl) => {
+    const text = lineEl.innerText || lineEl.textContent || "";
+    const w = mCtx.measureText(text).width;
+    if (w > maxTextWidth) maxTextWidth = w;
   });
+
+  const windowWidth = Math.max(480, Math.ceil(maxTextWidth + gutterWidth + winPadX * 2));
+  const windowHeight = headerHeight + winPadTop + linesCount * lineHeight + winPadBottom;
+
+  const totalWidth = windowWidth + cardPadX * 2;
+  const totalHeight = windowHeight + cardPadY * 2 + 20;
+
+  // 创建 Canvas
+  const canvas = document.createElement("canvas");
+  canvas.width = totalWidth * scale;
+  canvas.height = totalHeight * scale;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(scale, scale);
+
+  // 1. 绘制渐变背景
+  const GRADIENTS = {
+    aurora: ["#4f46e5", "#7c3aed", "#ec4899"],
+    cyber: ["#0ea5e9", "#3b82f6", "#6366f1"],
+    sunset: ["#f59e0b", "#ef4444", "#ec4899"],
+    emerald: ["#059669", "#10b981", "#06b6d4"],
+    dark: ["#18181b", "#27272a", "#3f3f46"],
+  };
+  const colors = GRADIENTS[gradientName] || GRADIENTS.aurora;
+  const grad = ctx.createLinearGradient(0, 0, totalWidth, totalHeight);
+  grad.addColorStop(0, colors[0]);
+  grad.addColorStop(0.5, colors[1]);
+  grad.addColorStop(1, colors[2]);
+
+  drawRoundedRect(ctx, 0, 0, totalWidth, totalHeight, 16);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // 2. 绘制窗口外阴影与主体容器
+  const winX = cardPadX;
+  const winY = cardPadY;
+
+  ctx.save();
+  ctx.shadowColor = "rgba(0, 0, 0, 0.45)";
+  ctx.shadowBlur = 32;
+  ctx.shadowOffsetY = 16;
+  drawRoundedRect(ctx, winX, winY, windowWidth, windowHeight, 10);
+  ctx.fillStyle = "#21252b";
+  ctx.fill();
+  ctx.restore();
+
+  // 绘制窗口边框
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+  ctx.lineWidth = 1;
+  drawRoundedRect(ctx, winX, winY, windowWidth, windowHeight, 10);
+  ctx.stroke();
+
+  // 3. 绘制 Header
+  ctx.save();
+  drawRoundedRect(ctx, winX, winY, windowWidth, windowHeight, 10);
+  ctx.clip();
+
+  ctx.fillStyle = "#1b1d23";
+  ctx.fillRect(winX, winY, windowWidth, headerHeight);
+
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.06)";
+  ctx.beginPath();
+  ctx.moveTo(winX, winY + headerHeight);
+  ctx.lineTo(winX + windowWidth, winY + headerHeight);
+  ctx.stroke();
+
+  // Mac 三色小圆点
+  const dotY = winY + headerHeight / 2;
+  ctx.fillStyle = "#ff5f56";
+  ctx.beginPath();
+  ctx.arc(winX + 16, dotY, 5.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#ffbd2e";
+  ctx.beginPath();
+  ctx.arc(winX + 32, dotY, 5.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#27c93f";
+  ctx.beginPath();
+  ctx.arc(winX + 48, dotY, 5.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 语言 Badge
+  ctx.font = "bold 11px -apple-system, BlinkMacSystemFont, sans-serif";
+  const badgeText = langLabel.toUpperCase();
+  const badgeWidth = ctx.measureText(badgeText).width + 14;
+  const badgeX = winX + windowWidth - badgeWidth - 14;
+  const badgeY = winY + (headerHeight - 20) / 2;
+
+  drawRoundedRect(ctx, badgeX, badgeY, badgeWidth, 20, 4);
+  ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+  ctx.fill();
+
+  ctx.fillStyle = "#94a3b8";
+  ctx.textAlign = "center";
+  ctx.fillText(badgeText, badgeX + badgeWidth / 2, badgeY + 14);
+  ctx.restore();
+
+  // 4. 绘制代码行与行号
+  const contentStartY = winY + headerHeight + winPadTop;
+  const codeStartX = winX + winPadX + (showLineNumbers ? gutterWidth : 0);
+  const gutterX = winX + winPadX;
+
+  lineEls.forEach((lineEl, idx) => {
+    const lineNum = idx + 1;
+    const y = contentStartY + idx * lineHeight;
+    const isHighlighted = highlightedSet.has(lineNum);
+    const isFocusMuted = highlightedSet.size > 0 && !isHighlighted;
+
+    // 重点高亮行底色
+    if (isHighlighted) {
+      ctx.fillStyle = "rgba(97, 175, 239, 0.22)";
+      ctx.fillRect(winX + 1, y - 2, windowWidth - 2, lineHeight);
+      ctx.fillStyle = "#61afef";
+      ctx.fillRect(winX + 1, y - 2, 3, lineHeight);
+    }
+
+    // 绘制行号
+    if (showLineNumbers) {
+      ctx.font = '12px ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace';
+      ctx.fillStyle = isHighlighted ? "#61afef" : "#5c6370";
+      ctx.textAlign = "right";
+      ctx.fillText(String(lineNum), gutterX + gutterWidth - 14, y + 14);
+    }
+
+    // 绘制代码文本 Tokens
+    ctx.save();
+    if (isFocusMuted) {
+      ctx.globalAlpha = 0.38;
+    }
+    ctx.font = font;
+    ctx.textAlign = "left";
+
+    let currentX = codeStartX;
+    const tokens = extractTokensFromLine(lineEl);
+    for (const tok of tokens) {
+      ctx.fillStyle = tok.color;
+      ctx.fillText(tok.text, currentX, y + 14);
+      currentX += ctx.measureText(tok.text).width;
+    }
+    ctx.restore();
+  });
+
+  // 绘制行号分割线
+  if (showLineNumbers) {
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+    ctx.beginPath();
+    const divX = gutterX + gutterWidth - 6;
+    ctx.moveTo(divX, contentStartY - 4);
+    ctx.lineTo(divX, contentStartY + linesCount * lineHeight);
+    ctx.stroke();
+  }
+
+  // 5. 绘制右下角水印
+  ctx.font = "600 11px -apple-system, BlinkMacSystemFont, sans-serif";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
+  ctx.textAlign = "right";
+  ctx.fillText("EdgeEver Code Pro", totalWidth - cardPadX, totalHeight - 12);
+
+  return canvas;
+}
+
+function downloadCanvasImage(canvas, filename) {
+  try {
+    const dataUrl = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 100);
+    return true;
+  } catch (err) {
+    console.error("Canvas toDataURL download failed:", err);
+    return false;
+  }
+}
+
+async function copyCanvasImageToClipboard(canvas) {
+  if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
+    try {
+      const blob = await new Promise((res) => canvas.toBlob(res, "image/png"));
+      if (blob) {
+        const item = new ClipboardItem({ "image/png": blob });
+        await navigator.clipboard.write([item]);
+        return true;
+      }
+    } catch (err) {
+      console.warn("navigator.clipboard.write failed:", err);
+    }
+  }
+  return false;
 }
 
 function openRayCodeCardModal(block, detectedLang, langLabel, context) {
@@ -585,58 +782,56 @@ function openRayCodeCardModal(block, detectedLang, langLabel, context) {
   copyBtn.onclick = async () => {
     try {
       copyBtn.querySelector("span").textContent = "正在生成...";
-      const canvas = await renderCardToCanvas(cardNode);
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          context.ui?.showNotice?.("生成图片失败，请重试！");
-          copyBtn.querySelector("span").textContent = "复制图片到剪贴板";
-          return;
-        }
-        let copied = false;
-        try {
-          if (navigator.clipboard?.write) {
-            const item = new ClipboardItem({ "image/png": blob });
-            await navigator.clipboard.write([item]);
-            copied = true;
-          }
-        } catch (_) {}
+      const canvas = renderRayCardToCanvas(cardNode, {
+        showLineNumbers: showLinesCheck.checked,
+        langLabel: langLabel,
+        highlightedSet: highlightedSet,
+      });
 
-        if (copied) {
-          copyBtn.classList.add("copied");
-          copyBtn.querySelector("span").textContent = "已复制图片 ✓";
-          context.ui?.showNotice?.("Ray.so 风格代码卡片已复制到剪贴板！");
-          setTimeout(() => {
-            copyBtn.classList.remove("copied");
-            copyBtn.querySelector("span").textContent = "复制图片到剪贴板";
-          }, 2000);
-        } else {
-          // 兜底直接触发下载
-          downloadBlob(blob, `code-card-${Date.now()}.png`);
-          context.ui?.showNotice?.("已为您生成并自动下载卡片图片！");
+      const copied = await copyCanvasImageToClipboard(canvas);
+      if (copied) {
+        copyBtn.classList.add("copied");
+        copyBtn.querySelector("span").textContent = "已复制图片 ✓";
+        context.ui?.showNotice?.("Ray.so 风格代码卡片已成功复制到剪贴板！");
+        setTimeout(() => {
+          copyBtn.classList.remove("copied");
           copyBtn.querySelector("span").textContent = "复制图片到剪贴板";
-        }
-      }, "image/png");
+        }, 2000);
+      } else {
+        // 若系统禁止直接写剪贴板，自动兜底下载并给用户明确提示
+        downloadCanvasImage(canvas, `code-card-${Date.now()}.png`);
+        context.ui?.showNotice?.("剪贴板权限受限，已为您自动下载 PNG 卡片！");
+        copyBtn.querySelector("span").textContent = "已自动下载图片 ✓";
+        setTimeout(() => {
+          copyBtn.querySelector("span").textContent = "复制图片到剪贴板";
+        }, 2000);
+      }
     } catch (err) {
-      console.error("Card render error:", err);
-      context.ui?.showNotice?.("生成图片失败，请重试！");
+      console.error("Card copy error:", err);
+      context.ui?.showNotice?.("导出图片时发生异常，请重试！");
       copyBtn.querySelector("span").textContent = "复制图片到剪贴板";
     }
   };
 
   // 下载 PNG 图片
-  downloadBtn.onclick = async () => {
+  downloadBtn.onclick = () => {
     try {
       downloadBtn.querySelector("span").textContent = "正在生成...";
-      const canvas = await renderCardToCanvas(cardNode);
-      canvas.toBlob((blob) => {
-        if (blob) {
-          downloadBlob(blob, `code-card-${Date.now()}.png`);
-          context.ui?.showNotice?.("代码卡片下载成功！");
-        }
-        downloadBtn.querySelector("span").textContent = "下载 PNG 图片";
-      }, "image/png");
+      const canvas = renderRayCardToCanvas(cardNode, {
+        showLineNumbers: showLinesCheck.checked,
+        langLabel: langLabel,
+        highlightedSet: highlightedSet,
+      });
+
+      const ok = downloadCanvasImage(canvas, `code-card-${Date.now()}.png`);
+      if (ok) {
+        context.ui?.showNotice?.("代码卡片 PNG 下载成功！");
+      } else {
+        context.ui?.showNotice?.("下载图片失败，请检查浏览器权限！");
+      }
+      downloadBtn.querySelector("span").textContent = "下载 PNG 图片";
     } catch (err) {
-      console.error("Card render error:", err);
+      console.error("Card download error:", err);
       context.ui?.showNotice?.("生成图片失败，请重试！");
       downloadBtn.querySelector("span").textContent = "下载 PNG 图片";
     }
