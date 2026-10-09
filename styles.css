@@ -141,14 +141,14 @@ pre.edgeever-code-pro-block {
   top: calc(100% + 6px);
   left: 0;
   z-index: 1000;
-  min-width: 140px;
-  max-height: 220px;
-  overflow-y: auto;
+  min-width: 170px;
+  max-height: 290px;
+  overflow: hidden;
   background: var(--menu-bg, #1e222b);
   border: 1px solid var(--menu-border, rgba(255, 255, 255, 0.12));
   border-radius: 8px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
-  padding: 4px;
+  padding: 5px;
   display: none;
   flex-direction: column;
   backdrop-filter: blur(12px);
@@ -156,6 +156,70 @@ pre.edgeever-code-pro-block {
 
 .edgeever-code-lang-selector.open .edgeever-code-lang-menu {
   display: flex !important;
+}
+
+/* 语言下拉菜单搜索框 */
+.edgeever-code-lang-search-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  padding: 5px 8px;
+  background: var(--menu-bg, #1e222b);
+  border-bottom: 1px solid var(--menu-border, rgba(255, 255, 255, 0.08));
+  margin-bottom: 4px;
+  border-radius: 4px;
+}
+
+.edgeever-code-lang-search-icon {
+  width: 12px;
+  height: 12px;
+  color: var(--menu-text, #abb2bf);
+  opacity: 0.6;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.edgeever-code-lang-search-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--menu-text, #abb2bf);
+  font-size: 11px;
+  outline: none;
+  padding: 1px 0;
+  font-family: inherit;
+}
+
+.edgeever-code-lang-search-input::placeholder {
+  color: var(--menu-text, #abb2bf);
+  opacity: 0.5;
+}
+
+.edgeever-code-lang-list {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  max-height: 230px;
+  padding-right: 2px;
+}
+
+.edgeever-code-lang-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.edgeever-code-lang-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.edgeever-code-lang-empty {
+  padding: 14px 8px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--menu-text, #abb2bf);
+  opacity: 0.6;
 }
 
 .edgeever-code-lang-item {

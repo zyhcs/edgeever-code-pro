@@ -2,14 +2,14 @@
   "type": "plugin",
   "id": "org.edgeever.plugins.code-pro",
   "name": "Code Pro: Syntax Highlight & Beautifier",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "apiVersion": "2",
   "settingsUi": "host",
-  "description": "Professional code block beautification with standard syntax highlighting, full SAP ABAP support, Mac-style header bar, highly customizable Ray.so code card exporter (font size, padding, resolution), line highlight & focus mode, pretty printer, in-block search, and quick copy.",
+  "description": "Professional code block beautification with standard syntax highlighting supporting 50+ mainstream languages, fast fuzzy search language selector, full SAP ABAP support, Mac-style header bar, highly customizable Ray.so code card exporter, line highlight & focus mode, pretty printer, in-block search, and quick copy.",
   "locales": {
     "zh-CN": {
       "name": "Code Pro: 代码高亮与代码块美化",
-      "description": "专业级代码块美化与语法高亮插件。原生适配 EdgeEver 编辑器，深度支持 SAP ABAP 全语法高亮，提供可深度定制的 Ray.so 风格代码卡片一键导出复制（可调节字号、留白间距、高清分辨率与投影）、点击行号重点高亮与暗淡聚焦模式、一键代码格式化 (Pretty Printer)、超长代码平滑渐变折叠与代码块内独立搜索功能。"
+      "description": "专业级代码块美化与语法高亮插件。原生适配 EdgeEver 编辑器，全面支持 50+ 种主流编程语言与配置文件高亮、带即时搜索过滤的快速语言选择器，深度支持 SAP ABAP 全语法高亮，提供可深度定制的 Ray.so 风格代码卡片一键导出复制（可调节字号、留白间距、高清分辨率与投影）、点击行号重点高亮与暗淡聚焦模式、一键代码格式化 (Pretty Printer)、超长代码平滑渐变折叠与代码块内独立搜索功能。"
     }
   },
   "author": "zyhcs",

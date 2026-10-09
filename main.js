@@ -52,6 +52,163 @@ const GRAMMARS = {
     { type: "operator", pattern: /[-+*\/%=!&|<>^~:]+/g },
   ],
 
+  java: [
+    { type: "comment", pattern: /\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g },
+    { type: "string", pattern: /(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1/g },
+    { type: "function", pattern: /@[a-zA-Z_]\w*/g },
+    {
+      type: "keyword",
+      pattern:
+        /\b(?:abstract|assert|boolean|break|byte|case|catch|char|class|const|continue|default|do|double|else|enum|extends|final|finally|float|for|goto|if|implements|import|instanceof|int|interface|long|native|new|package|private|protected|public|return|short|static|strictfp|super|switch|synchronized|this|throw|throws|transient|try|void|volatile|while|true|false|null|var|record|yield|sealed|permits)\b/g,
+    },
+    { type: "number", pattern: /\b(?:0[xX][0-9a-fA-F_]+|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?[fFdDlL]?)\b/g },
+    { type: "function", pattern: /\b[a-zA-Z_$][a-zA-Z0-9_$]*(?=\s*\()/g },
+    { type: "operator", pattern: /[-+*\/%=!&|<>^?~:]+/g },
+  ],
+
+  c: [
+    { type: "comment", pattern: /\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g },
+    { type: "keyword", pattern: /^\s*#[a-zA-Z_]\w*/gm },
+    { type: "string", pattern: /(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1/g },
+    {
+      type: "keyword",
+      pattern:
+        /\b(?:auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|inline|int|long|register|restrict|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while|_Bool|_Complex|_Imaginary)\b/g,
+    },
+    { type: "number", pattern: /\b(?:0[xX][0-9a-fA-F]+|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?[fFlLuU]*)\b/g },
+    { type: "function", pattern: /\b[a-zA-Z_]\w*(?=\s*\()/g },
+    { type: "operator", pattern: /[-+*\/%=!&|<>^?~:]+/g },
+  ],
+
+  cpp: [
+    { type: "comment", pattern: /\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g },
+    { type: "keyword", pattern: /^\s*#[a-zA-Z_]\w*/gm },
+    { type: "string", pattern: /(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1/g },
+    {
+      type: "keyword",
+      pattern:
+        /\b(?:alignas|alignof|and|and_eq|asm|atomic_cancel|atomic_commit|atomic_noexcept|auto|bitand|bitor|bool|break|case|catch|char|char8_t|char16_t|char32_t|class|compl|concept|const|consteval|constexpr|constinit|const_cast|continue|co_await|co_return|co_yield|decltype|default|delete|do|double|dynamic_cast|else|enum|explicit|export|extern|false|float|for|friend|goto|if|inline|int|long|mutable|namespace|new|noexcept|not|not_eq|nullptr|operator|or|or_eq|private|protected|public|reflexpr|register|reinterpret_cast|requires|return|short|signed|sizeof|static|static_assert|static_cast|struct|switch|template|this|thread_local|throw|true|try|typedef|typeid|typename|union|unsigned|using|virtual|void|volatile|wchar_t|while|xor|xor_eq)\b/g,
+    },
+    { type: "number", pattern: /\b(?:0[xX][0-9a-fA-F]+|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?[fFlLuU]*)\b/g },
+    { type: "function", pattern: /\b[a-zA-Z_]\w*(?=\s*\()/g },
+    { type: "operator", pattern: /[-+*\/%=!&|<>^?~:]+/g },
+  ],
+
+  csharp: [
+    { type: "comment", pattern: /\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g },
+    { type: "string", pattern: /(?:@"(?:""|[^"])*"|\$?"(?:\\.|[^\\"\r\n])*")/g },
+    {
+      type: "keyword",
+      pattern:
+        /\b(?:abstract|as|base|bool|break|byte|case|catch|char|checked|class|const|continue|decimal|default|delegate|do|double|else|enum|event|explicit|extern|false|finally|fixed|float|for|foreach|goto|if|implicit|in|int|interface|internal|is|lock|long|namespace|new|null|object|operator|out|override|params|private|protected|public|readonly|ref|return|sbyte|sealed|short|sizeof|stackalloc|static|string|struct|switch|this|throw|true|try|typeof|uint|ulong|unchecked|unsafe|ushort|using|virtual|void|volatile|while|add|alias|ascending|async|await|by|descending|dynamic|equals|from|get|global|group|into|join|let|nameof|not|on|or|orderby|partial|record|remove|select|set|value|var|when|where|yield)\b/g,
+    },
+    { type: "number", pattern: /\b\d+(?:\.\d+)?(?:[eE][+-]?\d+)?[fFdDmMlL]?\b/g },
+    { type: "function", pattern: /\b[a-zA-Z_]\w*(?=\s*\()/g },
+    { type: "operator", pattern: /[-+*\/%=!&|<>^?~:]+/g },
+  ],
+
+  go: [
+    { type: "comment", pattern: /\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g },
+    { type: "string", pattern: /(?:`[^`]*`|"(?:\\.|[^\\"\r\n])*")/g },
+    {
+      type: "keyword",
+      pattern:
+        /\b(?:break|case|chan|const|continue|default|defer|else|fallthrough|for|func|go|goto|if|import|interface|map|package|range|return|select|struct|switch|type|var|true|false|iota|nil)\b/g,
+    },
+    {
+      type: "type",
+      pattern:
+        /\b(?:bool|string|int|int8|int16|int32|int64|uint|uint8|uint16|uint32|uint64|uintptr|byte|rune|float32|float64|complex64|complex128|error)\b/g,
+    },
+    { type: "number", pattern: /\b(?:0[xX][0-9a-fA-F]+|\d+(?:\.\d+)?)\b/g },
+    { type: "function", pattern: /\b[a-zA-Z_]\w*(?=\s*\()/g },
+    { type: "operator", pattern: /[-+*\/%=!&|<>^~:]+|:=/g },
+  ],
+
+  rust: [
+    { type: "comment", pattern: /\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g },
+    { type: "string", pattern: /(?:r#*".*?"#*|"(?:\\.|[^\\"\r\n])*")/g },
+    { type: "function", pattern: /\b[a-zA-Z_]\w*!/g },
+    {
+      type: "keyword",
+      pattern:
+        /\b(?:as|async|await|break|const|continue|crate|dyn|else|enum|extern|false|fn|for|if|impl|in|let|loop|match|mod|move|mut|pub|ref|return|self|Self|static|struct|super|trait|true|type|union|unsafe|use|where|while)\b/g,
+    },
+    {
+      type: "type",
+      pattern:
+        /\b(?:i8|i16|i32|i64|i128|isize|u8|u16|u32|u64|u128|usize|f32|f64|bool|char|str|String|Option|Result|Vec|Box)\b/g,
+    },
+    { type: "number", pattern: /\b\d+(?:\.\d+)?(?:[eE][+-]?\d+)?[a-zA-Z0-9_]*\b/g },
+    { type: "function", pattern: /\b[a-zA-Z_]\w*(?=\s*\()/g },
+    { type: "operator", pattern: /[-+*\/%=!&|<>^~:]+|->|=>/g },
+  ],
+
+  php: [
+    { type: "comment", pattern: /\/\*[\s\S]*?\*\/|\/\/[^\r\n]*|#[^\r\n]*/g },
+    { type: "string", pattern: /(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1/g },
+    { type: "abap-system-var", pattern: /\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/g },
+    {
+      type: "keyword",
+      pattern:
+        /\b(?:__halt_compiler|abstract|and|array|as|break|callable|case|catch|class|clone|const|continue|declare|default|die|do|echo|else|elseif|empty|enddeclare|endfor|endforeach|endif|endswitch|endwhile|eval|exit|extends|final|finally|fn|for|foreach|function|global|goto|if|implements|include|include_once|instanceof|insteadof|interface|isset|list|match|namespace|new|or|print|private|protected|public|readonly|require|require_once|return|static|switch|throw|trait|try|unset|use|var|while|xor|yield|true|false|null)\b/gi,
+    },
+    { type: "number", pattern: /\b\d+(?:\.\d+)?\b/g },
+    { type: "function", pattern: /\b[a-zA-Z_]\w*(?=\s*\()/g },
+    { type: "operator", pattern: /[-+*\/%=!&|<>^~:]+|=>|->/g },
+  ],
+
+  ruby: [
+    { type: "comment", pattern: /#[^\r\n]*/g },
+    { type: "string", pattern: /(?:%[qQ]?\{[^}]*\}|(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1)/g },
+    { type: "type", pattern: /:[a-zA-Z_]\w*/g },
+    { type: "abap-system-var", pattern: /(?:@@?|\$)[a-zA-Z_]\w*/g },
+    {
+      type: "keyword",
+      pattern:
+        /\b(?:alias|and|BEGIN|begin|break|case|class|def|defined\?|do|else|elsif|END|end|ensure|false|for|if|in|module|next|nil|not|or|redo|rescue|retry|return|self|super|then|true|undef|unless|until|when|while|yield)\b/g,
+    },
+    { type: "number", pattern: /\b\d+(?:\.\d+)?\b/g },
+    { type: "function", pattern: /\b[a-zA-Z_]\w*(?=\s*\()/g },
+  ],
+
+  swift: [
+    { type: "comment", pattern: /\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g },
+    { type: "string", pattern: /(?:"""[\s\S]*?"""|(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1)/g },
+    {
+      type: "keyword",
+      pattern:
+        /\b(?:associatedtype|class|deinit|enum|extension|fileprivate|func|import|init|inout|internal|let|open|operator|private|precedencegroup|protocol|public|rethrows|static|struct|subscript|typealias|var|break|case|catch|continue|default|defer|do|else|fallthrough|for|guard|if|in|repeat|return|throw|switch|where|while|as|Any|false|is|nil|super|self|Self|throws|true|try|async|await)\b/g,
+    },
+    { type: "number", pattern: /\b\d+(?:\.\d+)?\b/g },
+    { type: "function", pattern: /\b[a-zA-Z_]\w*(?=\s*\()/g },
+  ],
+
+  kotlin: [
+    { type: "comment", pattern: /\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g },
+    { type: "string", pattern: /(?:"""[\s\S]*?"""|(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1)/g },
+    { type: "function", pattern: /@[a-zA-Z_]\w*/g },
+    {
+      type: "keyword",
+      pattern:
+        /\b(?:as|break|class|continue|do|else|false|for|fun|if|in|interface|is|null|object|package|return|super|this|throw|true|try|typealias|val|var|when|while|by|catch|constructor|delegate|dynamic|field|file|finally|get|import|init|param|property|receiver|set|setparam|where|actual|abstract|annotation|companion|const|crossinline|data|enum|expect|external|final|infix|inline|inner|internal|lateinit|noinline|open|operator|out|override|private|protected|public|reified|sealed|suspend|tailrec|vararg)\b/g,
+    },
+    { type: "number", pattern: /\b\d+(?:\.\d+)?\b/g },
+    { type: "function", pattern: /\b[a-zA-Z_]\w*(?=\s*\()/g },
+  ],
+
+  dart: [
+    { type: "comment", pattern: /\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g },
+    { type: "string", pattern: /(?:r?'''[\s\S]*?'''|r?"""[\s\S]*?"""|r?(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1)/g },
+    {
+      type: "keyword",
+      pattern:
+        /\b(?:abstract|as|assert|async|await|base|break|case|catch|class|const|continue|covariant|default|deferred|do|dynamic|else|enum|export|extends|extension|external|factory|false|final|finally|for|Function|get|hide|if|implements|import|in|interface|is|late|library|mixin|new|null|of|on|operator|part|required|rethrow|return|sealed|set|show|static|super|switch|sync|this|throw|true|try|typedef|var|void|when|while|with|yield)\b/g,
+    },
+    { type: "number", pattern: /\b\d+(?:\.\d+)?\b/g },
+    { type: "function", pattern: /\b[a-zA-Z_]\w*(?=\s*\()/g },
+  ],
+
   sql: [
     { type: "comment", pattern: /--[^\r\n]*|\/\*[\s\S]*?\*\//g },
     { type: "string", pattern: /'(?:''|[^'\r\n])*'/g },
@@ -65,12 +222,49 @@ const GRAMMARS = {
     { type: "operator", pattern: /[-+*\/=<>!&|]+/g },
   ],
 
+  html: [
+    { type: "comment", pattern: /<!--[\s\S]*?-->/g },
+    { type: "comment", pattern: /<!(?:DOCTYPE|\[CDATA\[)[\s\S]*?>/gi },
+    { type: "keyword", pattern: /<\/?\s*[a-zA-Z0-9_\-:]+/g },
+    { type: "keyword", pattern: /\/?>/g },
+    { type: "type", pattern: /\b[a-zA-Z0-9_-]+(?=\s*=)/g },
+    { type: "string", pattern: /(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1/g },
+    { type: "abap-system-var", pattern: /&[a-zA-Z0-9#]+;/g },
+  ],
+
+  css: [
+    { type: "comment", pattern: /\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g },
+    { type: "string", pattern: /(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1/g },
+    { type: "keyword", pattern: /@[a-zA-Z-]+/g },
+    { type: "type", pattern: /(?:[.#][a-zA-Z0-9_-]+|:[a-zA-Z-]+)/g },
+    { type: "keyword", pattern: /\b[a-zA-Z-]+(?=\s*:)/g },
+    { type: "number", pattern: /\b\d+(?:\.\d+)?(?:px|em|rem|%|vh|vw|s|ms|deg)?\b/gi },
+    { type: "abap-system-var", pattern: /!important|var\(--[a-zA-Z0-9_-]+\)/g },
+  ],
+
   json: [
     { type: "keyword", pattern: /"(?:\\.|[^\\"\r\n])*"(?=\s*:)/g },
     { type: "string", pattern: /"(?:\\.|[^\\"\r\n])*"/g },
     { type: "number", pattern: /-?\b\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\b/g },
     { type: "keyword", pattern: /\b(?:true|false|null)\b/g },
     { type: "operator", pattern: /[{}[\]:,]/g },
+  ],
+
+  yaml: [
+    { type: "comment", pattern: /#[^\r\n]*/g },
+    { type: "keyword", pattern: /^[\s-]*[a-zA-Z0-9_-]+(?=\s*:)/gm },
+    { type: "string", pattern: /(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1/g },
+    { type: "keyword", pattern: /\b(?:true|false|yes|no|null|~)\b/gi },
+    { type: "number", pattern: /\b\d+(?:\.\d+)?\b/g },
+  ],
+
+  toml: [
+    { type: "comment", pattern: /#[^\r\n]*|;[^\r\n]*/g },
+    { type: "type", pattern: /^\s*\[[^\]]+\]/gm },
+    { type: "keyword", pattern: /^\s*[a-zA-Z0-9_.-]+(?=\s*=)/gm },
+    { type: "string", pattern: /(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1/g },
+    { type: "keyword", pattern: /\b(?:true|false)\b/gi },
+    { type: "number", pattern: /\b\d+(?:\.\d+)?\b/g },
   ],
 
   bash: [
@@ -83,36 +277,267 @@ const GRAMMARS = {
     { type: "abap-system-var", pattern: /\$[a-zA-Z0-9_?*#@!$-]+/g },
     { type: "function", pattern: /\b[a-zA-Z_][a-zA-Z0-9_-]*(?=\s*\()/g },
   ],
+
+  dockerfile: [
+    { type: "comment", pattern: /#[^\r\n]*/g },
+    {
+      type: "keyword",
+      pattern: /^\s*(?:FROM|MAINTAINER|RUN|CMD|LABEL|EXPOSE|ENV|ADD|COPY|ENTRYPOINT|VOLUME|USER|WORKDIR|ARG|ONBUILD|STOPSIGNAL|HEALTHCHECK|SHELL)\b/gmi,
+    },
+    { type: "string", pattern: /(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1/g },
+    { type: "abap-system-var", pattern: /\$[a-zA-Z0-9_]+|\$\{[^}]+\}/g },
+  ],
+
+  nginx: [
+    { type: "comment", pattern: /#[^\r\n]*/g },
+    {
+      type: "keyword",
+      pattern: /\b(?:server|location|listen|server_name|root|index|proxy_pass|proxy_set_header|try_files|rewrite|return|alias|access_log|error_log|include|upstream|events|http)\b/g,
+    },
+    { type: "abap-system-var", pattern: /\$[a-zA-Z0-9_]+/g },
+    { type: "string", pattern: /(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1/g },
+    { type: "number", pattern: /\b\d+(?:\.\d+)?\b/g },
+  ],
+
+  graphql: [
+    { type: "comment", pattern: /#[^\r\n]*/g },
+    {
+      type: "keyword",
+      pattern: /\b(?:query|mutation|subscription|fragment|schema|type|interface|union|scalar|enum|input|implements|directive|on)\b/g,
+    },
+    { type: "abap-system-var", pattern: /\$[a-zA-Z0-9_]+/g },
+    { type: "string", pattern: /(?:"""[\s\S]*?"""|"(?:\\.|[^\\"\r\n])*")/g },
+    { type: "number", pattern: /\b\d+(?:\.\d+)?\b/g },
+    { type: "keyword", pattern: /\b(?:true|false|null)\b/g },
+  ],
+
+  markdown: [
+    { type: "keyword", pattern: /^#{1,6}\s+[^\r\n]*/gm },
+    { type: "string", pattern: /`[^`\r\n]+`|```[\s\S]*?```/g },
+    { type: "function", pattern: /!?\[[^\]]*\]\([^)]*\)/g },
+    { type: "type", pattern: /(\*\*|__)[^\r\n*]+(\*\*|__)|(\*|_)[^\r\n*_]+(\*|_)/g },
+    { type: "comment", pattern: /^(?:>\s*|[-*+]\s+|\d+\.\s+)/gm },
+  ],
+
+  diff: [
+    { type: "string", pattern: /^\+[^\r\n]*/gm },
+    { type: "comment", pattern: /^-[^\r\n]*/gm },
+    { type: "type", pattern: /^@@[^@]+@@/gm },
+    { type: "keyword", pattern: /^(?:diff|index|---|\+\+\+)[^\r\n]*/gm },
+  ],
+
+  lua: [
+    { type: "comment", pattern: /--\[\[[\s\S]*?\]\]|--[^\r\n]*/g },
+    { type: "string", pattern: /(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1/g },
+    {
+      type: "keyword",
+      pattern: /\b(?:and|break|do|else|elseif|end|false|for|function|goto|if|in|local|nil|not|or|repeat|return|then|true|until|while)\b/g,
+    },
+    { type: "number", pattern: /\b\d+(?:\.\d+)?\b/g },
+    { type: "function", pattern: /\b[a-zA-Z_]\w*(?=\s*\()/g },
+  ],
+
+  powershell: [
+    { type: "comment", pattern: /<#[\s\S]*?#>|#[^\r\n]*/g },
+    { type: "string", pattern: /(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1/g },
+    { type: "abap-system-var", pattern: /\$[a-zA-Z0-9_:]+/g },
+    {
+      type: "keyword",
+      pattern: /\b(?:if|else|elseif|switch|foreach|for|while|do|until|break|continue|return|try|catch|finally|throw|function|param|process|begin|end)\b/gi,
+    },
+    { type: "function", pattern: /\b[a-zA-Z]+-[a-zA-Z]+\b/g },
+    { type: "number", pattern: /\b\d+(?:\.\d+)?\b/g },
+  ],
+
+  r: [
+    { type: "comment", pattern: /#[^\r\n]*/g },
+    { type: "string", pattern: /(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1/g },
+    { type: "keyword", pattern: /\b(?:if|else|repeat|while|function|for|in|next|break|TRUE|FALSE|NULL|Inf|NaN|NA)\b/g },
+    { type: "number", pattern: /\b\d+(?:\.\d+)?\b/g },
+    { type: "function", pattern: /\b[a-zA-Z._][a-zA-Z0-9._]*(?=\s*\()/g },
+  ],
+
+  scala: [
+    { type: "comment", pattern: /\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g },
+    { type: "string", pattern: /(?:"""[\s\S]*?"""|(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1)/g },
+    {
+      type: "keyword",
+      pattern:
+        /\b(?:abstract|case|catch|class|def|do|else|extends|false|final|finally|for|forSome|if|implicit|import|lazy|match|new|null|object|override|package|private|protected|return|sealed|super|this|throw|trait|try|true|type|val|var|while|with|yield)\b/g,
+    },
+    { type: "number", pattern: /\b\d+(?:\.\d+)?\b/g },
+    { type: "function", pattern: /\b[a-zA-Z_]\w*(?=\s*\()/g },
+  ],
+
+  makefile: [
+    { type: "comment", pattern: /#[^\r\n]*/g },
+    { type: "type", pattern: /^[a-zA-Z0-9_.-]+(?=\s*:)/gm },
+    { type: "abap-system-var", pattern: /\$\([a-zA-Z0-9_]+\)|\$\{[a-zA-Z0-9_]+\}/g },
+    {
+      type: "keyword",
+      pattern: /\b(?:ifeq|ifneq|ifdef|ifndef|else|endif|include|-include|sinclude|override|export|unexport|define|endef)\b/g,
+    },
+  ],
+
+  protobuf: [
+    { type: "comment", pattern: /\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g },
+    { type: "string", pattern: /(["'])(?:\\[\s\S]|(?!\1)[^\\])*\1/g },
+    {
+      type: "keyword",
+      pattern: /\b(?:syntax|package|import|option|message|enum|service|rpc|returns|oneof|repeated|optional|required|reserved|to)\b/g,
+    },
+    {
+      type: "type",
+      pattern: /\b(?:double|float|int32|int64|uint32|uint64|sint32|sint64|fixed32|fixed64|sfixed32|sfixed64|bool|string|bytes)\b/g,
+    },
+    { type: "number", pattern: /\b\d+\b/g },
+  ],
+
+  latex: [
+    { type: "comment", pattern: /%[^\r\n]*/g },
+    { type: "keyword", pattern: /\\(?:begin|end|documentclass|usepackage|newcommand|section|subsection|subsubsection|caption|label|ref|cite)\b/g },
+    { type: "function", pattern: /\\[a-zA-Z]+/g },
+    { type: "string", pattern: /\$[^$]+\$|\$\$[\s\S]+?\$\$/g },
+    { type: "operator", pattern: /[{}\[\]]/g },
+  ],
+
+  plaintext: [],
 };
 
+// 语法引擎别名扩展映射
 GRAMMARS.typescript = GRAMMARS.javascript;
 GRAMMARS.ts = GRAMMARS.javascript;
 GRAMMARS.js = GRAMMARS.javascript;
 GRAMMARS.py = GRAMMARS.python;
 GRAMMARS.sh = GRAMMARS.bash;
 GRAMMARS.shell = GRAMMARS.bash;
+GRAMMARS.zsh = GRAMMARS.bash;
+GRAMMARS.batch = GRAMMARS.bash;
+GRAMMARS.bat = GRAMMARS.bash;
+GRAMMARS.cmd = GRAMMARS.bash;
+GRAMMARS["c++"] = GRAMMARS.cpp;
+GRAMMARS["c#"] = GRAMMARS.csharp;
+GRAMMARS.cs = GRAMMARS.csharp;
+GRAMMARS.golang = GRAMMARS.go;
+GRAMMARS.rs = GRAMMARS.rust;
+GRAMMARS.rb = GRAMMARS.ruby;
+GRAMMARS.kt = GRAMMARS.kotlin;
+GRAMMARS.kts = GRAMMARS.kotlin;
+GRAMMARS.flutter = GRAMMARS.dart;
+GRAMMARS.xml = GRAMMARS.html;
+GRAMMARS.svg = GRAMMARS.html;
+GRAMMARS.htm = GRAMMARS.html;
+GRAMMARS.vue = GRAMMARS.html;
+GRAMMARS.svelte = GRAMMARS.html;
+GRAMMARS.scss = GRAMMARS.css;
+GRAMMARS.sass = GRAMMARS.css;
+GRAMMARS.less = GRAMMARS.css;
+GRAMMARS.yml = GRAMMARS.yaml;
+GRAMMARS.ini = GRAMMARS.toml;
+GRAMMARS.properties = GRAMMARS.toml;
+GRAMMARS.docker = GRAMMARS.dockerfile;
+GRAMMARS.gql = GRAMMARS.graphql;
+GRAMMARS.md = GRAMMARS.markdown;
+GRAMMARS.patch = GRAMMARS.diff;
+GRAMMARS.tex = GRAMMARS.latex;
+GRAMMARS.proto = GRAMMARS.protobuf;
+GRAMMARS.ps1 = GRAMMARS.powershell;
+GRAMMARS.ps = GRAMMARS.powershell;
+GRAMMARS.pl = GRAMMARS.python;
+GRAMMARS.perl = GRAMMARS.python;
+GRAMMARS.groovy = GRAMMARS.java;
+GRAMMARS.elixir = GRAMMARS.ruby;
+GRAMMARS.ex = GRAMMARS.ruby;
+GRAMMARS.haskell = GRAMMARS.scala;
+GRAMMARS.hs = GRAMMARS.scala;
+GRAMMARS.julia = GRAMMARS.python;
+GRAMMARS.jl = GRAMMARS.python;
+GRAMMARS.objectivec = GRAMMARS.cpp;
+GRAMMARS.objc = GRAMMARS.cpp;
+GRAMMARS.assembly = GRAMMARS.c;
+GRAMMARS.asm = GRAMMARS.c;
+GRAMMARS.plsql = GRAMMARS.sql;
+GRAMMARS.cmake = GRAMMARS.makefile;
+GRAMMARS.make = GRAMMARS.makefile;
+GRAMMARS.text = GRAMMARS.plaintext;
+GRAMMARS.txt = GRAMMARS.plaintext;
 
-// 常用语言选项列表
+// 全量受支持的高频及主流语言列表（共 50+ 种）
 const SUPPORTED_LANGUAGES = [
-  { id: "abap", label: "ABAP" },
-  { id: "javascript", label: "JavaScript" },
-  { id: "typescript", label: "TypeScript" },
-  { id: "python", label: "Python" },
-  { id: "sql", label: "SQL" },
-  { id: "json", label: "JSON" },
-  { id: "bash", label: "Bash" },
-  { id: "html", label: "HTML" },
-  { id: "css", label: "CSS" },
+  // 核心高频与常用语言
+  { id: "abap", label: "ABAP", aliases: ["sap"] },
+  { id: "javascript", label: "JavaScript", aliases: ["js"] },
+  { id: "typescript", label: "TypeScript", aliases: ["ts"] },
+  { id: "python", label: "Python", aliases: ["py"] },
   { id: "java", label: "Java" },
-  { id: "cpp", label: "C++" },
   { id: "c", label: "C" },
-  { id: "csharp", label: "C#" },
-  { id: "go", label: "Go" },
-  { id: "rust", label: "Rust" },
-  { id: "yaml", label: "YAML" },
-  { id: "markdown", label: "Markdown" },
-  { id: "plaintext", label: "Plain Text" },
+  { id: "cpp", label: "C++", aliases: ["c++"] },
+  { id: "csharp", label: "C#", aliases: ["c#", "cs"] },
+  { id: "go", label: "Go", aliases: ["golang"] },
+  { id: "rust", label: "Rust", aliases: ["rs"] },
+  { id: "sql", label: "SQL" },
+  { id: "html", label: "HTML", aliases: ["htm"] },
+  { id: "css", label: "CSS" },
+  { id: "json", label: "JSON" },
+  { id: "yaml", label: "YAML", aliases: ["yml"] },
+  { id: "bash", label: "Bash", aliases: ["sh", "shell", "zsh"] },
+  { id: "markdown", label: "Markdown", aliases: ["md"] },
+
+  // 后端、系统与通用编程语言
+  { id: "php", label: "PHP" },
+  { id: "ruby", label: "Ruby", aliases: ["rb"] },
+  { id: "swift", label: "Swift" },
+  { id: "kotlin", label: "Kotlin", aliases: ["kt", "kts"] },
+  { id: "dart", label: "Dart", aliases: ["flutter"] },
+  { id: "scala", label: "Scala" },
+  { id: "lua", label: "Lua" },
+  { id: "perl", label: "Perl", aliases: ["pl"] },
+  { id: "r", label: "R" },
+  { id: "groovy", label: "Groovy" },
+  { id: "elixir", label: "Elixir", aliases: ["ex"] },
+  { id: "haskell", label: "Haskell", aliases: ["hs"] },
+  { id: "julia", label: "Julia", aliases: ["jl"] },
+  { id: "objectivec", label: "Objective-C", aliases: ["objc"] },
+  { id: "assembly", label: "Assembly", aliases: ["asm"] },
+
+  // 前端与扩展样式
+  { id: "scss", label: "SCSS", aliases: ["sass"] },
+  { id: "less", label: "Less" },
+  { id: "vue", label: "Vue" },
+  { id: "svelte", label: "Svelte" },
+  { id: "xml", label: "XML", aliases: ["svg"] },
+  { id: "graphql", label: "GraphQL", aliases: ["gql"] },
+
+  // 脚本、终端与运维/配置
+  { id: "powershell", label: "PowerShell", aliases: ["ps1", "ps"] },
+  { id: "batch", label: "Batch (CMD)", aliases: ["bat", "cmd"] },
+  { id: "dockerfile", label: "Dockerfile", aliases: ["docker"] },
+  { id: "nginx", label: "Nginx" },
+  { id: "makefile", label: "Makefile", aliases: ["make"] },
+  { id: "cmake", label: "CMake" },
+  { id: "toml", label: "TOML" },
+  { id: "ini", label: "INI", aliases: ["properties", "cfg"] },
+  { id: "protobuf", label: "Protocol Buffers", aliases: ["proto"] },
+
+  // 数据库与查询扩展
+  { id: "plsql", label: "PL/SQL" },
+
+  // 文档标记与版本对比
+  { id: "diff", label: "Diff / Patch", aliases: ["patch"] },
+  { id: "latex", label: "LaTeX / TeX", aliases: ["tex"] },
+  { id: "plaintext", label: "Plain Text", aliases: ["text", "txt"] },
 ];
+
+function resolveLanguageId(id) {
+  if (!id) return "plaintext";
+  const normalized = id.trim().toLowerCase();
+  for (const item of SUPPORTED_LANGUAGES) {
+    if (item.id === normalized) return item.id;
+    if (item.aliases && item.aliases.includes(normalized)) return item.id;
+  }
+  if (GRAMMARS[normalized]) return normalized;
+  return normalized;
+}
 
 function escapeHtml(s) {
   return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -123,13 +548,21 @@ function escapeRegex(str) {
 }
 
 function highlightCode(code, lang) {
-  const rules = GRAMMARS[lang] || GRAMMARS.abap;
+  const resolvedLang = resolveLanguageId(lang);
+  const rules = GRAMMARS[resolvedLang] || GRAMMARS[lang];
+  if (!rules || rules.length === 0) {
+    return escapeHtml(code);
+  }
   const matches = [];
 
   for (const rule of rules) {
     let match;
     const re = new RegExp(rule.pattern.source, rule.pattern.flags);
     while ((match = re.exec(code)) !== null) {
+      if (match[0].length === 0) {
+        re.lastIndex++;
+        continue;
+      }
       matches.push({
         start: match.index,
         end: match.index + match[0].length,
@@ -1186,11 +1619,11 @@ export default {
         }
       }
 
-      detectedLang = detectedLang || "plaintext";
+      detectedLang = resolveLanguageId(detectedLang) || "plaintext";
       const matchedLang =
-        SUPPORTED_LANGUAGES.find((l) => l.id === detectedLang) || {
+        SUPPORTED_LANGUAGES.find((l) => l.id === detectedLang || (l.aliases && l.aliases.includes(detectedLang))) || {
           id: detectedLang,
-          label: detectedLang.toUpperCase(),
+          label: detectedLang ? detectedLang.toUpperCase() : "PLAIN TEXT",
         };
 
       const linesCount = rawText.split("\n").length;
@@ -1253,18 +1686,83 @@ export default {
         const menu = document.createElement("div");
         menu.className = "edgeever-code-lang-menu";
 
-        SUPPORTED_LANGUAGES.forEach((l) => {
-          const item = document.createElement("button");
-          item.type = "button";
-          item.className = `edgeever-code-lang-item${l.id === detectedLang ? " active" : ""}`;
-          item.textContent = l.label;
-          item.onclick = (e) => {
-            e.stopPropagation();
+        // 搜索输入过滤栏
+        const searchWrap = document.createElement("div");
+        searchWrap.className = "edgeever-code-lang-search-wrap";
+        searchWrap.innerHTML = `
+          <svg class="edgeever-code-lang-search-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" class="edgeever-code-lang-search-input" placeholder="搜索语言 (如 java, rust)..." />
+        `;
+        menu.appendChild(searchWrap);
+
+        const listWrap = document.createElement("div");
+        listWrap.className = "edgeever-code-lang-list";
+
+        const emptyTip = document.createElement("div");
+        emptyTip.className = "edgeever-code-lang-empty";
+        emptyTip.textContent = "未找到匹配语言";
+        emptyTip.style.display = "none";
+
+        const searchInput = searchWrap.querySelector(".edgeever-code-lang-search-input");
+
+        // 渲染语言项
+        function renderItems(filterQuery = "") {
+          listWrap.innerHTML = "";
+          const q = (filterQuery || "").trim().toLowerCase();
+          const filtered = SUPPORTED_LANGUAGES.filter((l) => {
+            if (!q) return true;
+            if (l.id.toLowerCase().includes(q)) return true;
+            if (l.label.toLowerCase().includes(q)) return true;
+            if (l.aliases && l.aliases.some((a) => a.toLowerCase().includes(q))) return true;
+            return false;
+          });
+
+          if (filtered.length === 0) {
+            emptyTip.style.display = "block";
+          } else {
+            emptyTip.style.display = "none";
+            filtered.forEach((l) => {
+              const item = document.createElement("button");
+              item.type = "button";
+              item.className = `edgeever-code-lang-item${l.id === detectedLang ? " active" : ""}`;
+              item.textContent = l.label;
+              item.onclick = (e) => {
+                e.stopPropagation();
+                langSelector.classList.remove("open");
+                changeCodeBlockLanguage(block, sourceEl, l.id);
+              };
+              listWrap.appendChild(item);
+            });
+          }
+        }
+
+        renderItems();
+        menu.appendChild(listWrap);
+        menu.appendChild(emptyTip);
+
+        // 搜索交互
+        searchInput.oninput = (e) => {
+          e.stopPropagation();
+          renderItems(searchInput.value);
+        };
+
+        searchInput.onclick = (e) => {
+          e.stopPropagation();
+        };
+
+        searchInput.onkeydown = (e) => {
+          e.stopPropagation();
+          if (e.key === "Enter") {
+            e.preventDefault();
+            const firstBtn = listWrap.querySelector(".edgeever-code-lang-item");
+            if (firstBtn) firstBtn.click();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
             langSelector.classList.remove("open");
-            changeCodeBlockLanguage(block, sourceEl, l.id);
-          };
-          menu.appendChild(item);
-        });
+          }
+        };
 
         badgeBtn.onclick = (e) => {
           e.stopPropagation();
@@ -1274,6 +1772,11 @@ export default {
           });
           if (!isOpen) {
             langSelector.classList.add("open");
+            searchInput.value = "";
+            renderItems();
+            setTimeout(() => {
+              searchInput.focus();
+            }, 60);
           }
         };
 
@@ -1656,8 +2159,8 @@ export default {
       // 5. 语法着色（核心逻辑）：
       const isEditing = document.activeElement === sourceEl || sourceEl.contains(document.activeElement);
       if (!isEditing && !block.classList.contains("has-search-open")) {
-        const langKey = GRAMMARS[detectedLang] ? detectedLang : detectedLang === "abap" ? "abap" : null;
-        if (langKey) {
+        const langKey = resolveLanguageId(detectedLang);
+        if (langKey && GRAMMARS[langKey] && GRAMMARS[langKey].length > 0) {
           const rawHl = highlightCode(rawText, langKey);
           sourceEl.innerHTML = wrapCodeInLines(rawHl, highlightedSet);
         } else {
